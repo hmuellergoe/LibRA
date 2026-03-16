@@ -130,7 +130,10 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     //// Initialize the MatrixCleaner.
     ///  ----------- do once ----------
     {
-    	itsCleaner.defineScales( itsScaleSizes );
+		const Float width = itsCleaner.getPsfGaussianWidth(*(itsImages->psf()));
+		
+    	itsCleaner.defineScales( itsScaleSizes);
+    	itsCleaner.defineUpdatedScales( width );
 
     	if(itsSmallScaleBias > 1)
     	{

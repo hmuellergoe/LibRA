@@ -55,7 +55,11 @@
 #include <casacore/casa/Logging/LogMessage.h>
 
 #include <synthesis/MeasurementEquations/MatrixCleaner.h>
+#include <synthesis/TransformMachines/StokesImageUtil.h>
+#include <synthesis/TransformMachines2/Utils.h>
 #include <casacore/coordinates/Coordinates/TabularCoordinate.h>
+#include <casacore/casa/Utilities/CountedPtr.h>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -88,6 +92,7 @@ MatrixCleaner::MatrixCleaner():
   itsDirty( ),
   itsXfr( ),
   itsScaleSizes(0),
+  itsUpdatedScaleSizes(0),
   itsMaximumResidual(0.0),
   itsStrengthOptimum(0.0),
   itsTotalFlux(0.0),
@@ -119,6 +124,7 @@ MatrixCleaner::MatrixCleaner(const Matrix<Float> & psf,
   itsMask( ),
   itsSmallScaleBias(0.0),
   itsScaleSizes(0),
+  itsUpdatedScaleSizes(0),
   itsMaximumResidual(0.0),
   itsStrengthOptimum(0.),
   itsTotalFlux(0.0),
@@ -171,6 +177,42 @@ void MatrixCleaner::setPsf(const Matrix<Float>& psf){
   FFTServer<Float,Complex> fft(psf.shape()); 
   fft.fft0(*itsXfr, psf);
   //cout << "shapes " << itsXfr->shape() << " psf " << psf.shape() << endl;
+}
+
+float MatrixCleaner::getPsfGaussianWidth(ImageInterface<Float>& psf)
+{
+	LogIO os( LogOrigin("AspMatrixCleaner","getPsfGaussianWidth",WHERE) );
+
+  GaussianBeam beam;
+  try
+  {
+      StokesImageUtil::FitGaussianPSF(psf, beam);
+  }
+  catch(AipsError &x)
+  {
+    os << "Error in fitting a Gaussian to the PSF : " << x.getMesg() << LogIO::POST;
+    throw( AipsError("Error in fitting a Gaussian to the PSF" + x.getMesg()) );
+  }
+
+  CoordinateSystem cs = psf.coordinates();
+  String dirunit = cs.worldAxisUnits()(0);
+  Vector<String> unitas = cs.worldAxisUnits();
+  unitas(0) = "arcsec";
+  unitas(1) = "arcsec";
+  cs.setWorldAxisUnits(unitas);
+
+  os << "major width " << beam.getMajor("arcsec") << " in " << cs.worldAxisUnits()(0) << LogIO::POST;
+  os << "minor width " << beam.getMinor("arcsec") << LogIO::POST;
+  os << " pixel sizes are " << abs(cs.increment()(0)) << " and ";
+  os << abs(cs.increment()(1)) << LogIO::POST;
+  const auto xpixels = beam.getMajor("arcsec") / abs(cs.increment()(0));
+  const auto ypixels = beam.getMinor("arcsec") / abs(cs.increment()(1));
+  os << "xpixels " << xpixels << " ypixels " << ypixels << LogIO::POST;
+
+  itsPsfWidth = float(ceil((xpixels + ypixels)/2));
+  os << "PSF width: " << itsPsfWidth << " pixels." << LogIO::POST;
+
+  return itsPsfWidth;
 }
 
 MatrixCleaner::MatrixCleaner(const MatrixCleaner & other)
@@ -689,7 +731,7 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
     //  LCBox subRegionPsf(blcPsf, trcPsf, model.shape());
     
     Matrix<Float> modelSub=model(blc, trc);
-    Matrix<Float> scaleSub=(itsScales[optimumScale])(blcPsf,trcPsf);
+    Matrix<Float> scaleSub=(itsUpdatedScales[optimumScale])(blcPsf,trcPsf);
  
     // Now do the addition of this scale to the model image....
     modelSub += scaleFactor*scaleSub;
@@ -730,9 +772,6 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
   if(!converged) {
     os << "Failed to reach stopping threshold" << LogIO::POST;
   }
-  
-  write_array(Optimums, std::string("./strengthoptimum"));
-  write_array(ScaleSizes, std::string("./scalesizes"));
 
   casacore::Vector<casacore::Int> xPositions(itsMaxNiter);
   casacore::Vector<casacore::Int> yPositions(itsMaxNiter);
@@ -747,10 +786,6 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
 		yPositions(ii) = Positions(ii)(1);
 	}
   }
-
-  //write_array(Positions, std::string("./positions"));
-  write_array(xPositions, std::string("./xpositions"));
-  write_array(yPositions, std::string("./ypositions"));
   
   for (int ii=0; ii < itsMaxNiter; ii++)
   {
@@ -890,6 +925,18 @@ void MatrixCleaner::defineScales(const Vector<Float>& scaleSizes){
   itsScalesValid=false;
 }
 
+void MatrixCleaner::defineUpdatedScales(const Float width){
+	itsUpdatedScaleSizes.resize(itsNscales);
+	itsUpdatedScaleSizes=itsScaleSizes;
+	Int scale=0;
+	for (scale=0; scale<itsNscales;scale++) {
+		if (itsScaleSizes[scale] < width)
+			itsUpdatedScaleSizes[scale] = 0.0;
+		else
+			itsUpdatedScaleSizes[scale] = pow( pow(itsScaleSizes[scale],2.0) - pow(width,2.0) , 0.5 );
+	}
+}
+
 void MatrixCleaner::makePsfScales(){
   LogIO os(LogOrigin("MatrixCleaner", "makePsfScales()", WHERE));
   if(itsNscales < 1)
@@ -910,11 +957,20 @@ void MatrixCleaner::makePsfScales(){
   }
   Matrix<Complex> cWork;
   
+  itsUpdatedScales.resize(itsNscales, true);
+  itsUpdatedScaleXfrs.resize(itsNscales, true);
+  for(scale=0; scale<itsNscales;scale++) {
+    itsUpdatedScales[scale] = Matrix<Float>(psfShape_p);
+    makeScale(itsUpdatedScales[scale], itsUpdatedScaleSizes(scale));
+    itsUpdatedScaleXfrs[scale] = Matrix<Complex> ();
+    fft.fft0(itsUpdatedScaleXfrs[scale], itsUpdatedScales[scale]);
+  }
+  
   for (scale=0; scale<itsNscales;scale++) {
     os << "Calculating convolutions for scale " << scale << LogIO::POST;
     //PSF * scale
     itsPsfConvScales[scale] = Matrix<Float>(psfShape_p);
-    cWork=((*itsXfr)*(itsScaleXfrs[scale])*(itsScaleXfrs[scale]));
+    cWork=((*itsXfr)*(itsScaleXfrs[scale])*(itsUpdatedScaleXfrs[scale]));
     //cout << "shape "  << cWork.shape() << "   " << itsPsfConvScales[scale].shape() << endl;
 
     fft.fft0((itsPsfConvScales[scale]), cWork, false);
@@ -929,7 +985,7 @@ void MatrixCleaner::makePsfScales(){
       
       // PSF *  scale * otherscale
       itsPsfConvScales[index(scale,otherscale)] =Matrix<Float>(psfShape_p);
-      cWork=((*itsXfr)*(itsScaleXfrs[scale])*(itsScaleXfrs[otherscale]));
+      cWork=((*itsXfr)*(itsScaleXfrs[scale])*(itsUpdatedScaleXfrs[otherscale]));
       fft.fft0(itsPsfConvScales[index(scale,otherscale)], cWork, false);
       //For some reason this complex->real fft  does not need a flip ...may be because conj(a)*a is real
       //fft.flip(*itsPsfConvScales[index(scale,otherscale)], false, false);

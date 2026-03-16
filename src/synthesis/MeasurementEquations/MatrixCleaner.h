@@ -39,6 +39,7 @@
 #include <casacore/lattices/LatticeMath/LatticeCleaner.h>
 #include <casacore/casa/Arrays/ArrayFwd.h>
 #include <casacore/casa/Utilities/CountedPtr.h>
+#include <casacore/images/Images/ImageInterface.h>
 
 namespace casa { //# NAMESPACE CASA - BEGIN
 
@@ -110,6 +111,8 @@ public:
   //the user will need to call setPsf+makePsfScales+setDirty+makeDirtyScales
   //to be in a good state to clean.
   void defineScales(const casacore::Vector<casacore::Float>& scales);
+  void defineUpdatedScales(const float width);
+  float getPsfGaussianWidth(casacore::ImageInterface<casacore::Float>& psf);
 
   //Set the dirty image without calculating convolutions..
   //can be done by calling  makeDirtyScales or setscales if one want to redo the
@@ -297,9 +300,12 @@ protected:
   casacore::Float itsSmallScaleBias;
   casacore::Block<casacore::Matrix<casacore::Float> > itsScaleMasks;
   casacore::Block<casacore::Matrix<casacore::Complex> > itsScaleXfrs;
+  casacore::Block<casacore::Matrix<casacore::Complex> > itsUpdatedScaleXfrs;
   casacore::Bool itsScalesValid;
   casacore::Int itsNscales;
   casacore::Float itsMaskThreshold;
+  
+  float itsPsfWidth;
 
   //# The following functions are used in various places in the code and are
   //# documented in the .cc file. Static functions are used when the functions
@@ -312,8 +318,10 @@ protected:
   casacore::CountedPtr<casacore::Matrix<casacore::Complex> >itsXfr;
 
   casacore::Vector<casacore::Float> itsScaleSizes;
+  casacore::Vector<casacore::Float> itsUpdatedScaleSizes;
 
   casacore::Block<casacore::Matrix<casacore::Float> > itsScales;
+  casacore::Block<casacore::Matrix<casacore::Float> > itsUpdatedScales;
   casacore::Block<casacore::Matrix<casacore::Float> > itsPsfConvScales;
   casacore::Block<casacore::Matrix<casacore::Float> > itsDirtyConvScales;
 
