@@ -61,7 +61,7 @@
 using namespace casacore;
 namespace casa { //# NAMESPACE CASA - BEGIN
 
-  SDAlgorithmAAspClean::SDAlgorithmAAspClean(Float fusedThreshold, bool isSingle, Int largestScale, Int stoppointmode):
+    SDAlgorithmAAspClean::SDAlgorithmAAspClean(Vector<Float> scales, Float hogbomGain, Float fusedThreshold, bool isSingle, Int largestScale, Int stoppointmode, Float lbfgsEpsF, Float lbfgsEpsX, Float lbfgsEpsG, Int lbfgsMaxit):
     SDAlgorithmBase(),
     itsMatPsf(), itsMatResidual(), itsMatModel(),
     itsCleaner(),
@@ -69,6 +69,12 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     itsFusedThreshold(fusedThreshold),
     itsUserLargestScale(largestScale),
     itsMCsetup(true),
+    itsScales(scales),
+    itsHogbomGain(hogbomGain),
+    itsLbfgsEpsF(lbfgsEpsF),
+    itsLbfgsEpsX(lbfgsEpsX),
+    itsLbfgsEpsG(lbfgsEpsG),
+    itsLbfgsMaxit(lbfgsMaxit),
     itsPrevPsfWidth(0),
     itsIsSingle(isSingle)
   {
@@ -109,8 +115,11 @@ namespace casa { //# NAMESPACE CASA - BEGIN
       if (itsPrevPsfWidth != width)
       {
         itsPrevPsfWidth = width;
-		itsCleaner.setInitScaleXfrs(width);
-	  }
+        if (itsScales.size() < 1)
+        	itsCleaner.setInitScaleXfrs(width);
+		else
+			itsCleaner.loadInitScaleXfrs(itsScales);
+      }
 
       itsCleaner.stopPointMode( itsStopPointMode );
       itsCleaner.ignoreCenterBox( true ); // Clean full image
@@ -121,9 +130,17 @@ namespace casa { //# NAMESPACE CASA - BEGIN
       //Matrix<Float> tempMat1(itsMatResidual);
       //itsCleaner.setOrigDirty( tempMat1 );
 
+      if (itsHogbomGain < 0)
+	  {
+		os << LogIO::WARN << "Acceptable hogbomgain values are >= 0. Changing hogbomgain from " << itsHogbomGain << " to 0." << LogIO::POST;
+		itsHogbomGain = 0.0;
+      }
 
       itsCleaner.setFusedThreshold(itsFusedThreshold);
+      itsCleaner.setHogbomGain(itsHogbomGain);
     }
+    
+    itsCleaner.setLBFGSControl(itsLbfgsEpsF,itsLbfgsEpsX,itsLbfgsEpsG,itsLbfgsMaxit);  
 
     // Parts to be repeated at each minor cycle start....
     //itsCleaner.setInitScaleMasks(itsMatMask); //casa6

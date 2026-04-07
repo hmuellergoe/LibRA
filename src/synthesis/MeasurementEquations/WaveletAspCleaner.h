@@ -75,7 +75,6 @@ public:
 	const std::vector<casacore::IPosition> &activeSetCenter,
 	casacore::FFTServer<casacore::Float,casacore::Complex> &fft) const override;
 
-  
   void setWaveletControl(const casacore::Vector<casacore::Float> waveletScales, const casacore::Vector<casacore::Float> waveletAmps) { itsWaveletScales = waveletScales; itsWaveletAmps=waveletAmps;}
 
 protected:

@@ -98,6 +98,11 @@ AspMatrixCleaner::AspMatrixCleaner():
   itsOrigDirty( ),
   itsFusedThreshold(0.0),
   itsdimensionsareeven(true),
+  itsLbfgsEpsG(0.001),
+  itsLbfgsEpsF(0.001),
+  itsLbfgsEpsX(0.001),
+  itsLbfgsMaxit(5),
+  itsHogbomGain(0.0),
   itsNumNoChange(0),
   itsBinSizeForSumFlux(4),
   itsUserLargestScale(-1.0),
@@ -154,6 +159,8 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
   LogIO os(LogOrigin("AspMatrixCleaner", "aspclean()", WHERE));
   os << LogIO::NORMAL1 << "Asp clean algorithm" << LogIO::POST;
 
+  if(itsHogbomGain == 0)
+	itsHogbomGain = itsGain;
 
   //Int scale;
 
@@ -262,6 +269,8 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
   Float initRMSResidual = 1000.0;
   // float initModelFlux = 0.0;
   itsdimensionsareeven = (psfShape_p(0) == 2*(psfShape_p(0)/2));
+  
+  Float tempGain;
   
   os <<LogIO::NORMAL3<< "Starting iteration"<< LogIO::POST;
   vector<Float> tempScaleSizes;
@@ -430,9 +439,15 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
 	    else
 	      itsNumIterNoGoodAspen.push_back(0);
     }
+    
+    //which loop gain to use
+	if (itsOptimumScaleSize == 0.0)
+		tempGain = itsHogbomGain;
+	else
+		tempGain = itsGain;
 
     // Now add to the total flux
-    totalFlux += (itsStrengthOptimum*itsGain);
+    totalFlux += (itsStrengthOptimum*tempGain);
     itsTotalFlux = totalFlux;
 
     if(ii == itsStartingIter)
@@ -564,7 +579,7 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
     // Update the model image
     Matrix<Float> modelSub = model(blc, trc);
     Float scaleFactor;
-    scaleFactor = itsGain * itsStrengthOptimum;
+    scaleFactor = tempGain * itsStrengthOptimum;
     Matrix<Float> scaleSub = (itsScale)(blcPsf,trcPsf);
     modelSub += scaleFactor * scaleSub;
 
@@ -1181,6 +1196,42 @@ void AspMatrixCleaner::setInitScaleXfrs(const Float width)
   }
 }
 
+void AspMatrixCleaner::loadInitScaleXfrs(const casacore::Vector<casacore::Float> & scales)
+{
+  if(itsInitScales.nelements() > 0)
+    destroyAspScales();
+
+  if (itsSwitchedToHogbom)
+  {
+  	itsNInitScales = 1;
+  	itsInitScaleSizes.resize(itsNInitScales, false);
+    itsInitScaleSizes = {0.0f};
+  }
+  else
+  {
+  	itsNInitScales = scales.size();
+  	itsInitScaleSizes.resize(itsNInitScales, false);
+        Int scale = 0;
+        while (scale < itsNInitScales)
+        {
+	  itsInitScaleSizes[scale] = scales(scale);
+	  scale++;
+        }
+  }
+
+  itsInitScales.resize(itsNInitScales, false);
+  itsInitScaleXfrs.resize(itsNInitScales, false);
+  fft = FFTServer<Float,Complex>(psfShape_p);
+  for (int scale = 0; scale < itsNInitScales; scale++)
+  {
+    itsInitScales[scale] = Matrix<Float>(psfShape_p);
+    makeInitScaleImage(itsInitScales[scale], itsInitScaleSizes[scale]);
+    //cout << "made itsInitScales[" << scale << "] = " << itsInitScaleSizes[scale] << endl;
+    itsInitScaleXfrs[scale] = Matrix<Complex> ();
+    fft.fft0(itsInitScaleXfrs[scale], itsInitScales[scale]);
+  }
+}
+
 // calculate the convolutions of the psf with the initial scales
 void AspMatrixCleaner::setInitScalePsfs()
 {
@@ -1634,10 +1685,14 @@ vector<Float> AspMatrixCleaner::getActiveSetAspen(const float peakres)
 	  }
 
 
-	  double epsg = 1e-3;
-	  double epsf = 1e-3;
-	  double epsx = 1e-3;
-	  ae_int_t maxits = 5;
+	  double epsg = itsLbfgsEpsG;
+	  double epsf = itsLbfgsEpsF;
+	  double epsx = itsLbfgsEpsX;
+	  ae_int_t maxits = itsLbfgsMaxit;
+	  //double epsg = 1e-3;
+	  //double epsf = 1e-3;
+	  //double epsx = 1e-3;
+	  //ae_int_t maxits = 5;
 	  minlbfgsstate state;
 	  minlbfgscreate(1, x, state);
 	  minlbfgssetcond(state, epsg, epsf, epsx, maxits);

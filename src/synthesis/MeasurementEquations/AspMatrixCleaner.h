@@ -109,6 +109,7 @@ public:
 
   void setInitScales();
   void setInitScaleXfrs(const casacore::Float width);
+  void loadInitScaleXfrs(const casacore::Vector<casacore::Float> & scales);
 
   // calculate the convolutions of the psf with the initial scales
   void setInitScalePsfs();
@@ -127,6 +128,7 @@ public:
   void switchedToHogbom(bool runlong= false);
   void setOrigDirty(const casacore::Matrix<casacore::Float>& dirty);
   void setFusedThreshold(const casacore::Float fusedThreshold = 0.0) { itsFusedThreshold = fusedThreshold; }
+  void setHogbomGain(const casacore::Float hogbomGain = 0.0) { itsHogbomGain = hogbomGain; }
   void setUserLargestScale(const casacore::Int largestScale = -1) { itsUserLargestScale = float(largestScale); }
 
   // setter/getter
@@ -148,6 +150,7 @@ public:
     const std::vector<casacore::IPosition> &activeSetCenter,
     casacore::FFTServer<casacore::Float,casacore::Complex> &fft) const;
 
+  void setLBFGSControl(const casacore::Float LbfgsEpsF, const casacore::Float LbfgsEpsX, const casacore::Float LbfgsEpsG, const casacore::Int LbfgsMaxit) { itsLbfgsEpsF = LbfgsEpsF; itsLbfgsEpsX = LbfgsEpsX; itsLbfgsEpsG = LbfgsEpsG; itsLbfgsMaxit = LbfgsMaxit;}
 
 protected:
 //private:
@@ -223,6 +226,7 @@ protected:
   const casacore::Int itsDefaultNorm = 1;
   casacore::Int itsNormMethod;
   casacore::Float itsFusedThreshold;
+  casacore::Float itsHogbomGain;
   unsigned int itsNumNoChange; // number of times peakres rarely changes
   casacore::Int itsBinSizeForSumFlux ;   // number of bins for histogram of the sum of Flux
   float itsLargestInitScale; // estimated largest initial scale
@@ -230,6 +234,10 @@ protected:
   casacore::IPosition blcDirty, trcDirty;
   
   casacore::Bool itsdimensionsareeven;
+  casacore::Float itsLbfgsEpsF;
+  casacore::Float itsLbfgsEpsX;
+  casacore::Float itsLbfgsEpsG;
+  casacore::Int itsLbfgsMaxit;
   // for storing variable states when called in hummbee
   StateFile sf;
 };
