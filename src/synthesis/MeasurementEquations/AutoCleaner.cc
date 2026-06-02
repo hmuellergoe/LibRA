@@ -378,9 +378,9 @@ Int AutoCleaner::clean(Matrix<Float>& model,
     itsIteration++;
     // Find the peak residual
     itsStrengthOptimum = 0.0;
-
+	
     // Find absolute maximum for the dirty image
-    Matrix<Float> work = vecWork_p(blcDirty,trcDirty);   
+    /*Matrix<Float> work = vecWork_p(blcDirty,trcDirty);   
     work = 0.0;
     work = work + itsDirty(blcDirty,trcDirty);
 
@@ -388,10 +388,16 @@ Int AutoCleaner::clean(Matrix<Float>& model,
 	    findMaxAbsMask(vecWork_p, *itsMask, MaximumHogbom, posMaximumHogbom);
     } else {
 	    findMaxAbs(vecWork_p, MaximumHogbom, posMaximumHogbom);
-	  }
+	  }*/
+	  
+	if (!itsMask.null()) {
+		findMaxAbsMaskBox(itsDirty, *itsMask, blcDirty, trcDirty, MaximumHogbom, posMaximumHogbom);
+	} else {
+		findMaxAbsBox(itsDirty, blcDirty, trcDirty, MaximumHogbom, posMaximumHogbom);
+	}
 
     // Find absolute maximum for the ms dirty image
-    Matrix<Float> workms = vecWork_pms(blcDirty,trcDirty);  
+    /*Matrix<Float> workms = vecWork_pms(blcDirty,trcDirty);  
     workms = 0.0;
     workms = workms + tildeMI(blcDirty,trcDirty);
 
@@ -399,15 +405,24 @@ Int AutoCleaner::clean(Matrix<Float>& model,
 	    findMaxAbsMask(vecWork_pms, *itsMask, itsStrengthOptimum, posMaximum);
     } else {
 	    findMaxAbs(vecWork_pms, itsStrengthOptimum, posMaximum);
-	  }
-
+	  }*/
+	  
+	if (itsAutoHogbom == false){
+		if (!itsMask.null()) {
+			findMaxAbsMaskBox(tildeMI, *itsMask, blcDirty, trcDirty, itsStrengthOptimum, posMaximum);
+		} else {
+			findMaxAbsBox(tildeMI, blcDirty, trcDirty, itsStrengthOptimum, posMaximum);
+		}
+	}
+	
     if(abs(MaximumHogbom) > abs(itsStrengthOptimum)/normcmap || itsAutoHogbom){
 	itsStrengthOptimum = MaximumHogbom;
 	posMaximum = posMaximumHogbom;
-        tempGain=itsHogbomGain/max(itsPsf);
+        //tempGain=itsHogbomGain/max(itsPsf);
+        tempGain=itsHogbomGain*itsmaxbeam;
         cleanhogbom=true;
-        totalFlux += (itsStrengthOptimum*tempGain);
-        os << "Using Hogbom-CLEAN step"<< LogIO::POST;
+        totalFlux += (itsStrengthOptimum*tempGain)/itsmaxbeam;
+        //os << "Using Hogbom-CLEAN step"<< LogIO::POST;
     }
     else{
         tempGain=itsGain/max(tildeMB);
@@ -419,22 +434,23 @@ Int AutoCleaner::clean(Matrix<Float>& model,
                 itsStrengthOptimum=itsDirty(posMaximum);
 		}
         //totalFlux += (itsStrengthOptimum*tempGain*sumcmap);
-        os << "Using MS-CLEAN step"<< LogIO::POST;
+        //os << "Using MS-CLEAN step"<< LogIO::POST;
     }
-
+	
     //trigger hogbom if we are stuck in a minimum
     if(cleanhogbom==false){
-	if(posMaximum == posMaximumlast){
-		if(abs(abs(itsStrengthOptimum)-abs(StrengthOptimumlast))<0.1*abs(itsStrengthOptimum) && abs(itsStrengthOptimum+StrengthOptimumlast)<0.1*abs(itsStrengthOptimum)){
-			os << "We trigger Hogbom step instead, since the MS-CLEAN step got stuck" << LogIO::POST;
-			itsStrengthOptimum = MaximumHogbom;
-			posMaximum = posMaximumHogbom;
-			tempGain=itsHogbomGain/max(itsPsf);
-			cleanhogbom=true;
-			totalFlux += (itsStrengthOptimum*tempGain);
-			os << "Using Hogbom-CLEAN step"<< LogIO::POST;
+		if(posMaximum == posMaximumlast){
+			if(abs(abs(itsStrengthOptimum)-abs(StrengthOptimumlast))<0.1*abs(itsStrengthOptimum) && abs(itsStrengthOptimum+StrengthOptimumlast)<0.1*abs(itsStrengthOptimum)){
+				os << "We trigger Hogbom step instead, since the MS-CLEAN step got stuck" << LogIO::POST;
+				itsStrengthOptimum = MaximumHogbom;
+				posMaximum = posMaximumHogbom;
+				//tempGain=itsHogbomGain/max(itsPsf);
+				tempGain=itsHogbomGain*itsmaxbeam;
+				cleanhogbom=true;
+				totalFlux += (itsStrengthOptimum*tempGain)/itsmaxbeam;
+				os << "Using Hogbom-CLEAN step"<< LogIO::POST;
+			}
 		}
-	}
     }
 
     if(cleanhogbom==false){
@@ -462,20 +478,12 @@ Int AutoCleaner::clean(Matrix<Float>& model,
     LCBox::verify(blcPsf, trcPsf, inc, model.shape());
     makeBoxesSameSize(blc,trc,blcPsf,trcPsf);
     if (itsdimensionsareeven){
-	    //blc(0) = posMaximum(0)-support(0)/2;
-	    //blc(1) = posMaximum(1)-support(1)/2;
-	    //trc(0) = posMaximum(0)-support(0)/2-1;
-	    //trc(1) = posMaximum(1)-support(1)/2-1;
-	    blc(posMaximum-support/2);
-	    trc(posMaximum-support/2-1);
+	    blc = posMaximum-support/2;
+	    trc = posMaximum+support/2-1;
 	    LCBox::verify(blc, trc, inc, model.shape());
 	   
-	    //blcPsf(0) = blc(0)+itsPositionPeakPsf(0)-posMaximum(0);
-	    //blcPsf(1) = blc(1)+itsPositionPeakPsf(1)-posMaximum(1);
-	    //trcPsf(0) = trc(0)+itsPositionPeakPsf(0)-posMaximum(0);
-	    //trcPsf(1) = trc(1)+itsPositionPeakPsf(1)-posMaximum(1);
-	    blcPsf(blc+itsPositionPeakPsf-posMaximum);
-	    trcPsf(trc+itsPositionPeakPsf-posMaximum);
+	    blcPsf = blc+itsPositionPeakPsf-posMaximum;
+	    trcPsf = trc+itsPositionPeakPsf-posMaximum;
 	    LCBox::verify(blcPsf, trcPsf, inc, model.shape());
 	    makeBoxesSameSize(blc,trc,blcPsf,trcPsf);
     }
@@ -491,8 +499,8 @@ Int AutoCleaner::clean(Matrix<Float>& model,
     makeBoxesSameSize(blcconj,trcconj,blcPsfconj,trcPsfconj);
     
     if(itsAutoHogbom){
-	subtractBeam(itsDirty, itsPsf, blc, trc, blcPsf, trcPsf, scaleFactor, false, false);  
-	subtractBeam(model, itsScales, blc, trc, blcPsf, trcPsf, scaleFactor, false, true); 
+		subtractBeam(itsDirty, itsPsf, blc, trc, blcPsf, trcPsf, scaleFactor, false, false);  
+		subtractBeam(model, itsScales, blc, trc, blcPsf, trcPsf, scaleFactor/itsmaxbeam, false, true); 
     }
     else{
 	    if(cleanhogbom){
@@ -645,8 +653,8 @@ Int AutoCleaner::clean(Matrix<Float>& model,
 	    }
     }
 
-    os << itsDirty(posMaximum) << "   " << MaximumHogbom-scaleFactor*max(itsPsf) << LogIO::POST;
-    os << itsIteration << "   " << itsStrengthOptimum << "   " << totalFlux << LogIO::POST;
+    //os << itsDirty(posMaximum) << "   " << MaximumHogbom-scaleFactor*max(itsPsf) << LogIO::POST;
+    //os << itsIteration << "   " << itsStrengthOptimum << "   " << totalFlux << LogIO::POST;
     if(triggerhogbom>itsAutoTrigger){
         os << "we switch to Hogbom CLEAN permanently" << LogIO::POST;
 	itsAutoHogbom=true;
@@ -688,7 +696,7 @@ Int AutoCleaner::clean(Matrix<Float>& model,
     return true;
   }
 
-Bool AutoCleaner::findMaxAbs(const Matrix<Float>& lattice,
+/*Bool AutoCleaner::findMaxAbs(const Matrix<Float>& lattice,
 					  Float& maxAbs,
 					  IPosition& posMaxAbs)
 {
@@ -705,9 +713,80 @@ Bool AutoCleaner::findMaxAbs(const Matrix<Float>& lattice,
     posMaxAbs=posmin;
   }
   return true;
+}*/
+
+Bool AutoCleaner::findMaxAbs(const Matrix<Float>& lattice,
+                             Float& maxAbs,
+                             IPosition& posMaxAbs)
+{
+  posMaxAbs = IPosition(lattice.shape().nelements(), 0);
+  maxAbs = 0.0;
+
+  const Int nx = lattice.shape()(0);
+  const Int ny = lattice.shape()(1);
+
+  Float bestAbs = 0.0;
+  Float bestVal = 0.0;
+  Int bestX = 0;
+  Int bestY = 0;
+
+  for (Int y = 0; y < ny; ++y) {
+    for (Int x = 0; x < nx; ++x) {
+      const Float val = lattice(x, y);
+      const Float absVal = abs(val);
+
+      if (absVal > bestAbs) {
+        bestAbs = absVal;
+        bestVal = val;
+        bestX = x;
+        bestY = y;
+      }
+    }
+  }
+
+  maxAbs = bestVal;
+  posMaxAbs(0) = bestX;
+  posMaxAbs(1) = bestY;
+
+  return true;
 }
 
-Bool AutoCleaner::findMaxAbsMask(const Matrix<Float>& lattice,
+Bool AutoCleaner::findMaxAbsBox(const Matrix<Float>& lattice,
+                                const IPosition& blc,
+                                const IPosition& trc,
+                                Float& maxAbs,
+                                IPosition& posMaxAbs)
+{
+  posMaxAbs = IPosition(2, 0);
+  maxAbs = 0.0;
+
+  Float bestAbs = 0.0;
+  Float bestVal = 0.0;
+  Int bestX = blc(0);
+  Int bestY = blc(1);
+
+  for (Int y = blc(1); y <= trc(1); ++y) {
+    for (Int x = blc(0); x <= trc(0); ++x) {
+      const Float val = lattice(x, y);
+      const Float absVal = abs(val);
+
+      if (absVal > bestAbs) {
+        bestAbs = absVal;
+        bestVal = val;
+        bestX = x;
+        bestY = y;
+      }
+    }
+  }
+
+  maxAbs = bestVal;
+  posMaxAbs(0) = bestX;
+  posMaxAbs(1) = bestY;
+
+  return true;
+}
+
+/*Bool AutoCleaner::findMaxAbsMask(const Matrix<Float>& lattice,
 					      const Matrix<Float>& mask,
 					      Float& maxAbs,
 					      IPosition& posMaxAbs)
@@ -723,6 +802,85 @@ Bool AutoCleaner::findMaxAbsMask(const Matrix<Float>& lattice,
     posMaxAbs=posmin;
   }
  
+  return true;
+}*/
+
+Bool AutoCleaner::findMaxAbsMask(const Matrix<Float>& lattice,
+                                 const Matrix<Float>& mask,
+                                 Float& maxAbs,
+                                 IPosition& posMaxAbs)
+{
+  posMaxAbs = IPosition(lattice.shape().nelements(), 0);
+  maxAbs = 0.0;
+
+  AlwaysAssert(lattice.shape() == mask.shape(), AipsError);
+
+  const Int nx = lattice.shape()(0);
+  const Int ny = lattice.shape()(1);
+
+  Float bestAbs = 0.0;
+  Float bestVal = 0.0;
+  Int bestX = 0;
+  Int bestY = 0;
+
+  for (Int y = 0; y < ny; ++y) {
+    for (Int x = 0; x < nx; ++x) {
+      if (mask(x, y) > 0.0f) {
+        const Float val = lattice(x, y);
+        const Float absVal = abs(val);
+
+        if (absVal > bestAbs) {
+          bestAbs = absVal;
+          bestVal = val;
+          bestX = x;
+          bestY = y;
+        }
+      }
+    }
+  }
+
+  maxAbs = bestVal;
+  posMaxAbs(0) = bestX;
+  posMaxAbs(1) = bestY;
+
+  return true;
+}
+
+Bool AutoCleaner::findMaxAbsMaskBox(const Matrix<Float>& lattice,
+                                    const Matrix<Float>& mask,
+                                    const IPosition& blc,
+                                    const IPosition& trc,
+                                    Float& maxAbs,
+                                    IPosition& posMaxAbs)
+{
+  posMaxAbs = IPosition(2, 0);
+  maxAbs = 0.0;
+
+  Float bestAbs = 0.0;
+  Float bestVal = 0.0;
+  Int bestX = blc(0);
+  Int bestY = blc(1);
+
+  for (Int y = blc(1); y <= trc(1); ++y) {
+    for (Int x = blc(0); x <= trc(0); ++x) {
+      if (mask(x, y) > 0.0f) {
+        const Float val = lattice(x, y);
+        const Float absVal = abs(val);
+
+        if (absVal > bestAbs) {
+          bestAbs = absVal;
+          bestVal = val;
+          bestX = x;
+          bestY = y;
+        }
+      }
+    }
+  }
+
+  maxAbs = bestVal;
+  posMaxAbs(0) = bestX;
+  posMaxAbs(1) = bestY;
+
   return true;
 }
 
@@ -1494,7 +1652,51 @@ void AutoCleaner::updateBasisFunction()
 	os << "Using " << niter << " iterations for that" << LogIO::POST;
 }
 
+
 void AutoCleaner::subtractBeam(Matrix<Float> &map, Matrix<Float> &beam, IPosition blc, IPosition trc, IPosition blcbeam, IPosition trcbeam, Float factor, Bool reverse, Bool add)
+{
+  const Int nxMap  = map.shape()(0);
+  const Int nxBeam = beam.shape()(0);
+  const Int nyBeam = beam.shape()(1);
+
+  Float* mapData = map.data();
+  const Float* beamData = beam.data();
+
+  const Float sgn = add ? factor : -factor;
+
+  const Int x0 = blc(0);
+  const Int y0 = blc(1);
+  const Int x1 = trc(0);
+  const Int y1 = trc(1);
+
+  const Int bx0 = blcbeam(0);
+  const Int by0 = blcbeam(1);
+
+  for (Int y = y0; y <= y1; ++y) {
+    const Int dy = y - y0;
+    const Int mapOffset = y * nxMap;
+
+    Int by = by0 + dy;
+    if (reverse) {
+      by = nyBeam - 1 - by;
+    }
+
+    const Int beamOffset = by * nxBeam;
+
+    for (Int x = x0; x <= x1; ++x) {
+      const Int dx = x - x0;
+
+      Int bx = bx0 + dx;
+      if (reverse) {
+        bx = nxBeam - 1 - bx;
+      }
+
+      mapData[mapOffset + x] += sgn * beamData[beamOffset + bx];
+    }
+  }
+}
+
+/*void AutoCleaner::subtractBeam(Matrix<Float> &map, Matrix<Float> &beam, IPosition blc, IPosition trc, IPosition blcbeam, IPosition trcbeam, Float factor, Bool reverse, Bool add)
 {
   Matrix<Float> mapSub=map(blc,trc);
   if(reverse){
@@ -1507,13 +1709,49 @@ void AutoCleaner::subtractBeam(Matrix<Float> &map, Matrix<Float> &beam, IPositio
   }
   else{
      if(add){
-        mapSub += factor*beam(blcbeam,trcbeam);
+        //mapSub += factor*beam(blcbeam,trcbeam);
+        
+        //profiling
+		Bool deleteMap = false;
+		Bool deleteBeam = false;
+
+		Float* d = mapSub.getStorage(deleteMap);
+		const Float* p = (beam(blcbeam,trcbeam)).getStorage(deleteBeam);
+
+		const size_t n = mapSub.nelements();
+
+		for (size_t k = 0; k < n; ++k) {
+			d[k] += factor * p[k];
+		}
+
+		mapSub.putStorage(d, deleteMap);
+		beam.freeStorage(p, deleteBeam);
+		//
+        
      }
      else{
-        mapSub -= factor*beam(blcbeam,trcbeam);
+        //mapSub -= factor*beam(blcbeam,trcbeam);
+        
+        //profiling
+		Bool deleteMap = false;
+		Bool deleteBeam = false;
+
+		Float* d = mapSub.getStorage(deleteMap);
+		const Float* p = (beam(blcbeam,trcbeam)).getStorage(deleteBeam);
+
+		const size_t n = mapSub.nelements();
+
+		for (size_t k = 0; k < n; ++k) {
+			d[k] -= factor * p[k];
+		}
+
+		mapSub.putStorage(d, deleteMap);
+		beam.freeStorage(p, deleteBeam);
+		//
+        
      }
   }
-}
+}*/
 
 Bool AutoCleaner::setscales()
 {

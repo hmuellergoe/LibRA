@@ -270,6 +270,9 @@ protected:
   // Find the Peak of the lattice, applying a mask
   casacore::Bool findMaxAbsMask(const casacore::Matrix<casacore::Float>& lattice, const casacore::Matrix<casacore::Float>& mask,
                              casacore::Float& maxAbs, casacore::IPosition& posMax);
+                             
+  casacore::Bool findMaxAbsBox(const casacore::Matrix<casacore::Float>& lattice, const casacore::IPosition& blc, const casacore::IPosition& trc, casacore::Float& maxAbs, casacore::IPosition& posMaxAbs);
+  casacore::Bool findMaxAbsMaskBox(const casacore::Matrix<casacore::Float>& lattice, const casacore::Matrix<casacore::Float>& mask, const casacore::IPosition& blc, const casacore::IPosition& trc, casacore::Float& maxAbs, casacore::IPosition& posMaxAbs);
 
   // Helper function to reduce the box sizes until the have the same
   // size keeping the centers intact
