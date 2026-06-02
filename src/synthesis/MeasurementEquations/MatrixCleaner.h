@@ -300,6 +300,7 @@ protected:
   casacore::Bool itsScalesValid;
   casacore::Int itsNscales;
   casacore::Float itsMaskThreshold;
+  casacore::Bool itsdimensionsareeven;
 
   //# The following functions are used in various places in the code and are
   //# documented in the .cc file. Static functions are used when the functions

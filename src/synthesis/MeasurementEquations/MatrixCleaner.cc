@@ -128,6 +128,7 @@ MatrixCleaner::MatrixCleaner(const Matrix<Float> & psf,
   itsStopAtLargeScaleNegative(false),
   itsStopPointMode(-1),
   itsDidStopPointMode(false),
+  itsdimensionsareeven(true),
   noClean_p(false),
   itsJustStarting(true)
 {
@@ -323,7 +324,7 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
                          Bool /*showProgress*/)
 {
   AlwaysAssert(model.shape()==itsDirty->shape(), AipsError);
-
+  itsdimensionsareeven = (model.shape()(0) == 2*(model.shape()(0)/2));
   LogIO os(LogOrigin("MatrixCleaner", "clean()", WHERE));
 
   Float tmpMaximumResidual=0.0;
@@ -666,12 +667,23 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
     IPosition trc(positionOptimum+support/2-1);
     LCBox::verify(blc, trc, inc, model.shape());
     
+	IPosition blcPsf(blc+itsPositionPeakPsf-positionOptimum);
+	IPosition trcPsf(trc+itsPositionPeakPsf-positionOptimum);
+	LCBox::verify(blcPsf, trcPsf, inc, model.shape());
+	makeBoxesSameSize(blc,trc,blcPsf,trcPsf);
+    
+    if (itsdimensionsareeven == false){
+		blc = positionOptimum-support/2+1;
+	    trc = positionOptimum+support/2-1;
+	    LCBox::verify(blc, trc, inc, model.shape());
+	    
+	    blcPsf = blc+itsPositionPeakPsf-positionOptimum;
+		trcPsf = trc+itsPositionPeakPsf-positionOptimum-2;
+		LCBox::verify(blcPsf, trcPsf, inc, model.shape());
+		makeBoxesSameSize(blc,trc,blcPsf,trcPsf);
+    }
     //cout << "blc " << blc.asVector() << " trc " << trc.asVector() << endl;
 
-    IPosition blcPsf(blc+itsPositionPeakPsf-positionOptimum);
-    IPosition trcPsf(trc+itsPositionPeakPsf-positionOptimum);
-    LCBox::verify(blcPsf, trcPsf, inc, model.shape());
-    makeBoxesSameSize(blc,trc,blcPsf,trcPsf);
     // cout << "blcPsf " << blcPsf.asVector() << " trcPsf " << trcPsf.asVector() << endl;
     //cout << "blc " << blc.asVector() << " trc " << trc.asVector() << endl;
     //    LCBox subRegion(blc, trc, model.shape());
@@ -691,6 +703,7 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
       
 	Matrix<Float> dirtySub=(itsDirtyConvScales[scale])(blc,trc);
 	//AlwaysAssert(itsPsfConvScales[index(scale,optimumScale)], AipsError);
+	
 	Matrix<Float> psfSub=(itsPsfConvScales[index(scale,optimumScale)])(blcPsf, trcPsf);
 	dirtySub -= scaleFactor*psfSub;
 	    
@@ -1292,6 +1305,14 @@ Bool MatrixCleaner::makeScaleMasks()
     Matrix<Float> newResidual(itsDirty->shape());
     fft.fft0(newResidual, modelFT, false);
     fft.flip(newResidual, false, false);
+    if (itsdimensionsareeven == false){
+	  IPosition support(model.shape());
+	  IPosition nullnull(2,0);
+      Matrix<Float> shift(psfShape_p);
+      shift.assign_conforming(newResidual);
+      Matrix<Float> sub = newResidual(nullnull+1,support-1);
+      sub.assign_conforming(shift(nullnull,support-2));
+    }
     newResidual=(*itsDirty)-newResidual;
     return newResidual;
   }

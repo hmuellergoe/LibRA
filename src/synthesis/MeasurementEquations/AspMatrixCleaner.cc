@@ -481,7 +481,7 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
     if (abs(itsStrengthOptimum) < (1e-6 * itsFusedThreshold))
     {
     	//cout << "Reached stopping threshold " << 1e-6 * itsFusedThreshold << " at iteration "<< ii << endl;
-      os << LogIO::NORMAL3 << "Reached stopping threshold " << 1e-6 * itsFusedThreshold << " at iteration "<<
+      os << "Reached stopping threshold " << 1e-6 * itsFusedThreshold << " at iteration "<<
             ii << LogIO::POST;
       os <<LogIO::NORMAL3 << "Optimum flux is " << abs(itsStrengthOptimum) << LogIO::POST;
       converged = 1;
@@ -495,7 +495,7 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
         itsStrengthOptimum < 0.0)
 
     {
-      os <<LogIO::NORMAL3 << "Reached negative on largest scale" << LogIO::POST;
+      os << "Reached negative on largest scale" << LogIO::POST;
       converged = -2;
     }
     //  3. stop point mode at work
@@ -508,7 +508,7 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
 
       if (stopPointModeCounter >= itsStopPointMode)
       {
-        os <<LogIO::NORMAL3 << "Cleaned " << stopPointModeCounter <<
+        os << "Cleaned " << stopPointModeCounter <<
           " consecutive components from the smallest scale, stopping prematurely"
            << LogIO::POST;
         itsDidStopPointMode = true;
@@ -532,7 +532,7 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
        (abs(itsPeakResidual)-abs(tmpMaximumResidual)) > (abs(tmpMaximumResidual)/2.0) ||
        (abs(itsPeakResidual)-abs(minMaximumResidual)) > (abs(minMaximumResidual)/2.0))
     {
-      os << LogIO::NORMAL3 << "Diverging due to unknown reason" << LogIO::POST;
+      os << "Diverging due to unknown reason" << LogIO::POST;
       os << LogIO::NORMAL3 << "tmpMaximumResidual " << abs(tmpMaximumResidual) << " itsStrengthOptimum " << abs(itsStrengthOptimum) << " itsPeakResidual " << abs(itsPeakResidual) << LogIO::POST;
       os << LogIO::NORMAL3 << "minMaximumResidual " << abs(minMaximumResidual) << LogIO::POST;
 
@@ -591,18 +591,14 @@ Int AspMatrixCleaner::aspclean(Matrix<Float>& model,
     fft.fft0(itsPsfConvScale, cWork, false);
     fft.flip(itsPsfConvScale, false, false); //need this if conv with 1 scale; don't need this if conv with 2 scales
     //Hendrik's fix for pixel shifting error
-    IPosition nullnull(2,0);
-    Matrix<Float> shift(psfShape_p);
-    shift.assign_conforming(itsPsfConvScale);
-    if (itsdimensionsareeven){
-        Matrix<Float> sub = itsPsfConvScale(nullnull+1,support-1);
-        sub.assign_conforming(shift(nullnull,support-2));
-    }
-    else{
+    if (itsdimensionsareeven == false){
+	  IPosition nullnull(2,0);
+      Matrix<Float> shift(psfShape_p);
+      shift.assign_conforming(itsPsfConvScale);
       Matrix<Float> sub = itsPsfConvScale(nullnull+2,support-1);
       sub.assign_conforming(shift(nullnull,support-3));
     }
-    //
+    
     Matrix<Float> psfSub = (itsPsfConvScale)(blcPsf, trcPsf);
     Matrix<Float> dirtySub=(*itsDirty)(blc,trc);
     
