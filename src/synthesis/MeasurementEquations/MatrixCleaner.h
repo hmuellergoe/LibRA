@@ -120,6 +120,9 @@ public:
   void makeDirtyScales();
   // Update the dirty image only (equiv of setDirty + makeDirtyScales)
   void update(const casacore::Matrix<casacore::Float> & dirty);
+  
+  //subtract the beam
+  void subtractBeam(casacore::Matrix<casacore::Float> &map, casacore::Matrix<casacore::Float> &beam, casacore::IPosition blc, casacore::IPosition trc, casacore::IPosition blcbeam, casacore::IPosition trcbeam, casacore::Float factor, casacore::Bool add);
 
   //change the psf
   //don't forget to redo the setscales or run makePsfScales,
@@ -281,6 +284,9 @@ protected:
   // Find the Peak of the lattice, applying a mask
   casacore::Bool findMaxAbsMask(const casacore::Matrix<casacore::Float>& lattice, const casacore::Matrix<casacore::Float>& mask,
                              casacore::Float& maxAbs, casacore::IPosition& posMax);
+                             
+  casacore::Bool findMaxAbsBox(const casacore::Matrix<casacore::Float>& lattice, const casacore::IPosition& blc, const casacore::IPosition& trc, casacore::Float& maxAbs, casacore::IPosition& posMaxAbs);
+  casacore::Bool findMaxAbsMaskBox(const casacore::Matrix<casacore::Float>& lattice, const casacore::Matrix<casacore::Float>& mask, const casacore::IPosition& blc, const casacore::IPosition& trc, casacore::Float& maxAbs, casacore::IPosition& posMaxAbs);
 
   // Helper function to reduce the box sizes until the have the same
   // size keeping the centers intact

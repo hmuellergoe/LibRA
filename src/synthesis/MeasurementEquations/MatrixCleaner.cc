@@ -512,9 +512,10 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
       for (scale=0; scale<nScalesToClean; ++scale) {
 	// Find absolute maximum for the dirty image
 	//	cout << "in omp loop for scale : " << scale << " : " << blcDirty << " : " << trcDirty << " :: " << itsDirtyConvScales.nelements() << endl;
-        Matrix<Float> work = (vecWork_p[scale])(blcDirty,trcDirty);   
+    /*    Matrix<Float> work = (vecWork_p[scale])(blcDirty,trcDirty);   
 	work = 0.0;
 	work = work + (itsDirtyConvScales[scale])(blcDirty,trcDirty);
+	
 	maxima(scale)=0;
 	posMaximum[scale]=IPosition(model.shape().nelements(), 0);
 	
@@ -523,6 +524,13 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
 				maxima(scale), posMaximum[scale]);
 	} else {
 	  findMaxAbs(vecWork_p[scale], maxima(scale), posMaximum[scale]);
+	}*/
+	maxima(scale)=0;
+	posMaximum[scale]=IPosition(model.shape().nelements(), 0);
+	if (!itsMask.null()) {
+		findMaxAbsMaskBox(itsDirtyConvScales[scale], itsScaleMasks[scale], blcDirty, trcDirty, maxima(scale), posMaximum[scale]);
+	} else {
+		findMaxAbsBox(itsDirtyConvScales[scale], blcDirty, trcDirty, maxima(scale), posMaximum[scale]);
 	}
 	
 	// Remember to adjust the position for the window and for 
@@ -689,23 +697,43 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
     //    LCBox subRegion(blc, trc, model.shape());
     //  LCBox subRegionPsf(blcPsf, trcPsf, model.shape());
     
-    Matrix<Float> modelSub=model(blc, trc);
-    Matrix<Float> scaleSub=(itsScales[optimumScale])(blcPsf,trcPsf);
- 
+    //Matrix<Float> modelSub=model(blc, trc);
+    //Matrix<Float> scaleSub=(itsScales[optimumScale])(blcPsf,trcPsf);
  
     // Now do the addition of this scale to the model image....
-    modelSub += scaleFactor*scaleSub;
+    //modelSub += scaleFactor*scaleSub;
+    
+	subtractBeam(model, itsScales[optimumScale], blc, trc, blcPsf, trcPsf, scaleFactor, true); 
 
     #pragma omp parallel default(shared) private(scale) num_threads(nth)
     {
       #pragma omp  for 			
       for (scale=0;scale<nScalesToClean; ++scale) {
       
-	Matrix<Float> dirtySub=(itsDirtyConvScales[scale])(blc,trc);
-	//AlwaysAssert(itsPsfConvScales[index(scale,optimumScale)], AipsError);
+	//Matrix<Float> dirtySub=(itsDirtyConvScales[scale])(blc,trc);
+	////AlwaysAssert(itsPsfConvScales[index(scale,optimumScale)], AipsError);
 	
-	Matrix<Float> psfSub=(itsPsfConvScales[index(scale,optimumScale)])(blcPsf, trcPsf);
-	dirtySub -= scaleFactor*psfSub;
+	//Matrix<Float> psfSub=(itsPsfConvScales[index(scale,optimumScale)])(blcPsf, trcPsf);
+	//dirtySub -= scaleFactor*psfSub;
+	
+	subtractBeam(itsDirtyConvScales[scale], itsPsfConvScales[index(scale,optimumScale)], blc, trc, blcPsf, trcPsf, scaleFactor, false);  
+	
+	//profiling
+	//Bool deleteDirty = false;
+	//Bool deletePsf = false;
+
+	//Float* d = dirtySub.getStorage(deleteDirty);
+	//const Float* p = psfSub.getStorage(deletePsf);
+
+	//const size_t n = dirtySub.nelements();
+
+	//for (size_t k = 0; k < n; ++k) {
+	//	d[k] -= scaleFactor * p[k];
+	//}
+
+	//dirtySub.putStorage(d, deleteDirty);
+	//psfSub.freeStorage(p, deletePsf);
+	//
 	    
       }
     }//End parallel
@@ -789,7 +817,40 @@ Bool MatrixCleaner::findMaxAbs(const Matrix<Float>& lattice,
 }
 
 
+Bool MatrixCleaner::findMaxAbsBox(const Matrix<Float>& lattice,
+                                const IPosition& blc,
+                                const IPosition& trc,
+                                Float& maxAbs,
+                                IPosition& posMaxAbs)
+{
+  posMaxAbs = IPosition(2, 0);
+  maxAbs = 0.0;
 
+  Float bestAbs = 0.0;
+  Float bestVal = 0.0;
+  Int bestX = blc(0);
+  Int bestY = blc(1);
+
+  for (Int y = blc(1); y <= trc(1); ++y) {
+    for (Int x = blc(0); x <= trc(0); ++x) {
+      const Float val = lattice(x, y);
+      const Float absVal = abs(val);
+
+      if (absVal > bestAbs) {
+        bestAbs = absVal;
+        bestVal = val;
+        bestX = x;
+        bestY = y;
+      }
+    }
+  }
+
+  maxAbs = bestVal;
+  posMaxAbs(0) = bestX;
+  posMaxAbs(1) = bestY;
+
+  return true;
+}
 
 
 Bool MatrixCleaner::findMaxAbsMask(const Matrix<Float>& lattice,
@@ -811,7 +872,80 @@ Bool MatrixCleaner::findMaxAbsMask(const Matrix<Float>& lattice,
   return true;
 }
 
+Bool MatrixCleaner::findMaxAbsMaskBox(const Matrix<Float>& lattice,
+                                    const Matrix<Float>& mask,
+                                    const IPosition& blc,
+                                    const IPosition& trc,
+                                    Float& maxAbs,
+                                    IPosition& posMaxAbs)
+{
+  posMaxAbs = IPosition(2, 0);
+  maxAbs = 0.0;
 
+  Float bestAbs = 0.0;
+  Float bestVal = 0.0;
+  Int bestX = blc(0);
+  Int bestY = blc(1);
+
+  for (Int y = blc(1); y <= trc(1); ++y) {
+    for (Int x = blc(0); x <= trc(0); ++x) {
+      if (mask(x, y) > 0.0f) {
+        const Float val = lattice(x, y);
+        const Float absVal = abs(val);
+
+        if (absVal > bestAbs) {
+          bestAbs = absVal;
+          bestVal = val;
+          bestX = x;
+          bestY = y;
+        }
+      }
+    }
+  }
+
+  maxAbs = bestVal;
+  posMaxAbs(0) = bestX;
+  posMaxAbs(1) = bestY;
+
+  return true;
+}
+
+void MatrixCleaner::subtractBeam(Matrix<Float> &map, Matrix<Float> &beam, IPosition blc, IPosition trc, IPosition blcbeam, IPosition trcbeam, Float factor, Bool add)
+{
+  const Int nxMap  = map.shape()(0);
+  const Int nxBeam = beam.shape()(0);
+  const Int nyBeam = beam.shape()(1);
+
+  Float* mapData = map.data();
+  const Float* beamData = beam.data();
+
+  const Float sgn = add ? factor : -factor;
+
+  const Int x0 = blc(0);
+  const Int y0 = blc(1);
+  const Int x1 = trc(0);
+  const Int y1 = trc(1);
+
+  const Int bx0 = blcbeam(0);
+  const Int by0 = blcbeam(1);
+
+  for (Int y = y0; y <= y1; ++y) {
+    const Int dy = y - y0;
+    const Int mapOffset = y * nxMap;
+
+    Int by = by0 + dy;
+
+    const Int beamOffset = by * nxBeam;
+
+    for (Int x = x0; x <= x1; ++x) {
+      const Int dx = x - x0;
+
+      Int bx = bx0 + dx;
+
+      mapData[mapOffset + x] += sgn * beamData[beamOffset + bx];
+    }
+  }
+}
 
 Bool MatrixCleaner::setscales(const Int nscales, const Float scaleInc)
 {
