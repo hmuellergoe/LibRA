@@ -50,4 +50,58 @@ WaveletMSCleaner::~WaveletMSCleaner()
   if(!itsMask.null()) itsMask=0;
 }
 
+// Make a single scale size image
+void WaveletMSCleaner::makeScale(Matrix<Float>& iscale, const Float& scaleSize) 
+{
+  
+  Int nx=iscale.shape()(0);
+  Int ny=iscale.shape()(1);
+  //Matrix<Float> iscale(nx, ny);
+  iscale=0.0;
+  
+  Double refi=nx/2;
+  Double refj=ny/2;
+  
+  if(scaleSize==0.0) {
+    iscale(Int(refi), Int(refj)) = 1.0;
+  }
+  else {
+    AlwaysAssert(scaleSize>0.0,AipsError);
+
+    Int mini = max( 0, (Int)(refi-scaleSize));
+    Int maxi = min(nx-1, (Int)(refi+scaleSize));
+    Int minj = max( 0, (Int)(refj-scaleSize));
+    Int maxj = min(ny-1, (Int)(refj+scaleSize));
+
+    Float ypart=0.0;
+    Float volume=0.0;
+    Float rad2=0.0;
+    Float rad=0.0;
+
+    for (Int j=minj;j<=maxj;j++) {
+      ypart = square( (refj - (Double)(j)) / scaleSize );
+      for (Int i=mini;i<=maxi;i++) {
+		rad2 =  ypart + square( (refi - (Double)(i)) / scaleSize );
+		if (rad2 < 1.0) {
+			if (rad2 <= 0.0) {
+				rad = 0.0;
+			} else {
+				rad = sqrt(rad2);
+			}
+			iscale(i,j) = wavelet(rad);
+			volume += iscale(i,j);
+		} else {
+			iscale(i,j) = 0.0;
+		}
+      }
+    }
+    iscale/=volume;
+  }
+}
+
+// Calculate the spheroidal function
+Float WaveletMSCleaner::wavelet(Float rad) {
+  return 0.0;
+}
+
 } //# NAMESPACE CASA - END

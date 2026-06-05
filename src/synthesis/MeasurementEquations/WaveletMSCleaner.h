@@ -44,6 +44,11 @@ public:
 
   // The destructor does nothing special.
   ~WaveletMSCleaner();
+  
+protected:
+  
+  void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize) override;
+  float wavelet(float rad);
 
 };
 

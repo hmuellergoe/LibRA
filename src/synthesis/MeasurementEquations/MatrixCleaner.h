@@ -263,7 +263,7 @@ protected:
   casacore::Bool validatePsf(const casacore::Matrix<casacore::Float> & psf);
 
   // Make an array of the specified scale
-  void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize);
+  virtual void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize);
 
   // Make Spheroidal function for scale images
   casacore::Float spheroidal(casacore::Float nu);
