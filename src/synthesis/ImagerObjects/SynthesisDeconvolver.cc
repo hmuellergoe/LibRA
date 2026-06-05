@@ -141,6 +141,10 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 	  {
 	    itsDeconvolver.reset(new SDAlgorithmMSClean( decpars.scales, decpars.scalebias ));
 	  }
+	else if(decpars.algorithm==String("waveletmultiscale"))
+	  {
+	    itsDeconvolver.reset(new SDAlgorithmWaveletMSClean( decpars.scales, decpars.scalebias ));
+	  }
 	else if(decpars.algorithm==String("mem"))
 	  {
 	    itsDeconvolver.reset(new SDAlgorithmMEM( "entropy" ));

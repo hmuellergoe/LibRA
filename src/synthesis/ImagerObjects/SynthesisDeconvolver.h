@@ -41,6 +41,7 @@
 #include<synthesis/ImagerObjects/SDAlgorithmClarkClean2.h>
 #include<synthesis/ImagerObjects/SDAlgorithmMSMFS.h>
 #include<synthesis/ImagerObjects/SDAlgorithmMSClean.h>
+#include<synthesis/ImagerObjects/SDAlgorithmWaveletMSClean.h>
 #include<synthesis/ImagerObjects/SDAlgorithmMEM.h>
 #include<synthesis/ImagerObjects/SDAlgorithmAAspClean.h>
 #include<synthesis/ImagerObjects/SDAlgorithmWaveletAspClean.h>
