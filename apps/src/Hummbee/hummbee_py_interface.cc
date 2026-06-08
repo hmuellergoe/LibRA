@@ -47,6 +47,7 @@ PYBIND11_MODULE(hummbee2py, m)
     "lbfgsepsx"_a=0.001,
     "lbfgsepsg"_a=0.001,
     "lbfgsmaxit"_a=5,
+    "waveletdummyparam"_a=0,
     "nterms"_a=1,
     "gain"_a=0.1,
     "threshold"_a=0.0,

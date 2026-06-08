@@ -67,16 +67,18 @@ namespace casa { //# NAMESPACE CASA - BEGIN
   SDAlgorithmWaveletMSClean::SDAlgorithmWaveletMSClean( Vector<Float> scalesizes,
             Float smallscalebias,
             // Int stoplargenegatives,
-            Int stoppointmode ):
+            Int stoppointmode,
+            Float waveletdummyparam ):
     SDAlgorithmBase(),
     itsMatPsf(), itsMatResidual(), itsMatModel(),
     itsCleaner(),
     itsScaleSizes(scalesizes),
     itsSmallScaleBias(smallscalebias),
     //    itsStopLargeNegatives(stoplargenegatives),
-    itsStopPointMode(stoppointmode)
+    itsStopPointMode(stoppointmode),
+    itsWaveletDummyParam(waveletdummyparam)
    {
-     itsAlgorithmName=String("multiscale");
+     itsAlgorithmName=String("waveletmultiscale");
      if( itsScaleSizes.nelements()==0 ){ itsScaleSizes.resize(1); itsScaleSizes[0]=0.0; }
    }
 
@@ -127,6 +129,9 @@ namespace casa { //# NAMESPACE CASA - BEGIN
       itsImages->mask()->get( itsMatMask, true );
 
     }
+    
+    itsCleaner.setWaveletControl(itsWaveletDummyParam);
+    
     //// Initialize the MatrixCleaner.
     ///  ----------- do once ----------
     {

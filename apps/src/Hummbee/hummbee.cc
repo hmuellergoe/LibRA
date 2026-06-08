@@ -228,7 +228,9 @@ float Hummbee(
         string& imageName, string& modelImageName,
         string& deconvolver,
         vector<float>& scales,
-        float& largestscale, float& fusedthreshold,vector<float>& waveletscales,vector<float>& waveletamps,float& autothreshold,int& automaxiter,float& autogain,float& hogbomgain,bool& autohogbom, float& autotrigger,float& autopower, int& autoxmask, int& autoymask,float& lbfgsepsf, float& lbfgsepsx, float& lbfgsepsg, int& lbfgsmaxit,
+        float& largestscale, float& fusedthreshold,vector<float>& waveletscales,vector<float>& waveletamps,
+        float& autothreshold,int& automaxiter,float& autogain,float& hogbomgain,bool& autohogbom, float& autotrigger,float& autopower, int& autoxmask, int& autoymask,
+        float& lbfgsepsf, float& lbfgsepsx, float& lbfgsepsg, int& lbfgsmaxit,float& waveletdummyparam,
         int& nterms,
         float& gain, float& threshold,
         float& nsigma,
@@ -301,6 +303,7 @@ float Hummbee(
       decPars_p.lbfgsEpsX = lbfgsepsx;
       decPars_p.lbfgsEpsG = lbfgsepsg;
       decPars_p.lbfgsMaxit = lbfgsmaxit;
+      decPars_p.waveletdummyparam = waveletdummyparam;
       decPars_p.specmode=specmode; //deconvolve task does not have this
       decPars_p.largestscale = largestscale;
       decPars_p.scalebias = 0.0;

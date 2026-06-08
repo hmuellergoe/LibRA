@@ -55,7 +55,8 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     SDAlgorithmWaveletMSClean(casacore::Vector<casacore::Float> scalesizes,
 		       casacore::Float smallscalebias=0.6, 
 		       // casacore::Int stoplargenegatives=-2, 
-		       casacore::Int stoppointmode=-1 );
+		       casacore::Int stoppointmode=-1,
+		       casacore::Float waveletdummyparam=0 );
     virtual  ~SDAlgorithmWaveletMSClean();
     
     //returns the estimate of memory used in kilobytes (kB);
@@ -76,6 +77,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     casacore::Float itsSmallScaleBias;
     //casacore::Int itsStopLargeNegatives;
     casacore::Int itsStopPointMode;
+    casacore::Float itsWaveletDummyParam;
 
   private:
     //casacore::Bool itsMCsetup; 

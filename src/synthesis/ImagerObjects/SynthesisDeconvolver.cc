@@ -143,7 +143,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 	  }
 	else if(decpars.algorithm==String("waveletmultiscale"))
 	  {
-	    itsDeconvolver.reset(new SDAlgorithmWaveletMSClean( decpars.scales, decpars.scalebias ));
+	    itsDeconvolver.reset(new SDAlgorithmWaveletMSClean( decpars.scales, decpars.scalebias, decpars.waveletdummyparam ));
 	  }
 	else if(decpars.algorithm==String("mem"))
 	  {

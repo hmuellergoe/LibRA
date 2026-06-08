@@ -67,6 +67,7 @@ TEST(HummbeeTest, AppLevelCubeAsp) {
   float lbfgsepsx=0.001; 
   float lbfgsepsg=0.001; 
   int lbfgsmaxit=5;
+  float waveletdummyparam=0;
   int nterms=1;
   float gain=0.1;
   float threshold=1e-4;
@@ -85,7 +86,7 @@ TEST(HummbeeTest, AppLevelCubeAsp) {
                  largestscale, fusedthreshold,
                  waveletscales, waveletamps,
                  autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
-                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,
+                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,waveletdummyparam,
                  nterms,
                  gain, threshold,
                  nsigma,
@@ -167,6 +168,7 @@ TEST(HummbeeTest,  AppLevelMfsAsp) {
   float lbfgsepsx=0.001; 
   float lbfgsepsg=0.001; 
   int lbfgsmaxit=5;
+  float waveletdummyparam=0;
   int nterms=1;
   float gain=0.2;
   float threshold=2.6e-07;
@@ -187,7 +189,7 @@ TEST(HummbeeTest,  AppLevelMfsAsp) {
                  largestscale, fusedthreshold,
                  waveletscales, waveletamps,
                  autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
-                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,
+                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,waveletdummyparam,
                  nterms,
                  gain, threshold,
                  nsigma,
@@ -273,6 +275,7 @@ TEST(HummbeeTest,  AppLevelWAsp) {
   float lbfgsepsx=0.001; 
   float lbfgsepsg=0.001; 
   int lbfgsmaxit=5;
+  float waveletdummyparam=0;
   int nterms=3;
   float gain=0.6;
   float threshold=0.2;
@@ -289,7 +292,7 @@ TEST(HummbeeTest,  AppLevelWAsp) {
                  largestscale, fusedthreshold,
                  waveletscales, waveletamps,
                  autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
-                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,
+                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,waveletdummyparam,
                  nterms,
                  gain, threshold,
                  nsigma,
@@ -361,6 +364,7 @@ TEST(HummbeeTest,  AppLevelMfsRestore) {
   float lbfgsepsx=0.001; 
   float lbfgsepsg=0.001; 
   int lbfgsmaxit=5;
+  float waveletdummyparam=0;
   int nterms=1;
   float gain=0.2;
   float threshold=2.6e-07;
@@ -382,7 +386,7 @@ TEST(HummbeeTest,  AppLevelMfsRestore) {
                  largestscale, fusedthreshold,
                  waveletscales, waveletamps,
                  autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
-                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,
+                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,waveletdummyparam,
                  nterms,
                  gain, threshold,
                  nsigma,
@@ -413,7 +417,7 @@ TEST(HummbeeTest,  AppLevelMfsRestore) {
                  largestscale, fusedthreshold,
                  waveletscales, waveletamps,
                  autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
-                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,
+                 lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,waveletdummyparam,
                  nterms,
                  gain, threshold,
                  nsigma,
@@ -470,6 +474,7 @@ TEST(HummbeeTest, UIFactory) {
   float lbfgsepsx=0.001; 
   float lbfgsepsg=0.001; 
   int lbfgsmaxit=5;
+  float waveletdummyparam=0;
   int nterms=1;
   float gain=0.1; 
   float threshold=0.0;
@@ -488,7 +493,7 @@ TEST(HummbeeTest, UIFactory) {
     largestscale, fusedthreshold,
     waveletscales, waveletamps,
     autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
-    lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,
+    lbfgsepsf, lbfgsepsx, lbfgsepsg, lbfgsmaxit,waveletdummyparam,
     nterms,
     gain, threshold,
     nsigma,

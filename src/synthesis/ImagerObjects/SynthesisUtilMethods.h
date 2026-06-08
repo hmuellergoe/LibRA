@@ -475,6 +475,7 @@ public:
   casacore::Float lbfgsEpsX;
   casacore::Float lbfgsEpsG;
   casacore::Int lbfgsMaxit;
+  casacore::Float waveletdummyparam;
   casacore::String specmode;
   casacore::Int largestscale;
   // task deconvolve needs to tell siimagestore that we don't need to check for the sumwt image

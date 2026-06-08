@@ -4076,7 +4076,8 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 		err += readVal( inrec, String("lbfgsepsf"), lbfgsEpsF );
 		err += readVal( inrec, String("lbfgsepsx"), lbfgsEpsX );
 		err += readVal( inrec, String("lbfgsepsg"), lbfgsEpsG );
-		err += readVal( inrec, String("lbfgsMaxit"), lbfgsMaxit );
+		err += readVal( inrec, String("lbfgsmaxit"), lbfgsMaxit );
+		err += readVal( inrec, String("waveletdummyparam"), waveletdummyparam);
          if (inrec.isDefined("specmode"))
         {
           if(inrec.dataType("specmode") == TpString)
@@ -4392,6 +4393,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     lbfgsEpsX = 0.001;
     lbfgsEpsG = 0.001;
     lbfgsMaxit = 5;
+    waveletdummyparam = 0;
     specmode="mfs";
     largestscale = -1;
   }
@@ -4424,6 +4426,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     decpar.define("lbfgsepsx", lbfgsEpsX);
     decpar.define("lbfgsepsg", lbfgsEpsG);
     decpar.define("lbfgsmaxit", lbfgsMaxit);
+    decpar.define("waveletdummyparam", waveletdummyparam);
     decpar.define("specmode", specmode);
     decpar.define("largestscale", largestscale);
     if( maskList.nelements()==1 && maskList[0]=="") 
