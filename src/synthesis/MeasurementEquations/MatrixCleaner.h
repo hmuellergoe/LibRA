@@ -129,7 +129,7 @@ public:
   //followed by makeDirtyScales
   void setPsf(const casacore::Matrix<casacore::Float>& psf);
   //calculate the convolutions of the psf
-  void makePsfScales();
+  virtual void makePsfScales();
 
   // Set a number of scale sizes. The units of the scale are pixels.
   // The 2 functions below assume you have the dirty image and the psf set
@@ -138,7 +138,7 @@ public:
   casacore::Bool setscales(const casacore::Int nscales, const casacore::Float scaleInc=1.0);
 
   // Set a specific set of scales
-  casacore::Bool setscales(const casacore::Vector<casacore::Float> & scales);
+  virtual casacore::Bool setscales(const casacore::Vector<casacore::Float> & scales);
 
 
 
@@ -263,7 +263,7 @@ protected:
   casacore::Bool validatePsf(const casacore::Matrix<casacore::Float> & psf);
 
   // Make an array of the specified scale
-  virtual void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize);
+  void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize);
 
   // Make Spheroidal function for scale images
   casacore::Float spheroidal(casacore::Float nu);
@@ -349,11 +349,11 @@ protected:
 
   casacore::IPosition psfShape_p;
   casacore::Bool noClean_p;
-
-private:
-
+  
   // casacore::Memory to be allocated per TempLattice
   casacore::Double itsMemoryMB;
+
+private:
 
   // Let the user choose whether to stop
   casacore::Bool itsChoose;

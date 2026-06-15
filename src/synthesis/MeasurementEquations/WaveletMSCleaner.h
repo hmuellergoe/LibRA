@@ -47,13 +47,17 @@ public:
   
   void setWaveletControl(const casacore::Float waveletdummyparam) {itsWaveletDummyParam=waveletdummyparam;}
   
+  void makePsfScales() override;
+  casacore::Bool setscales(const casacore::Vector<casacore::Float> & scales) override;
+  
 protected:
 
   casacore::Float itsWaveletDummyParam;
   
-  void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize) override;
+  void makeScaleDiff(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize1, const casacore::Float& scaleSize2);
   casacore::Float wavelet(casacore::Float rad);
-  casacore::Float dogwavelet(casacore::Float rad, casacore::Float scaleSize);
+  casacore::Float dogwavelet(casacore::Float rad, casacore::Float scaleSize1, casacore::Float scaleSize2);
+  casacore::Float gaussian(casacore::Float rad, casacore::Float scaleSize);
 
 };
 
