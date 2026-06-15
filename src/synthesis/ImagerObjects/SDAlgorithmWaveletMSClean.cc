@@ -115,7 +115,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
   //  void SDAlgorithmWaveletMSClean::initializeDeconvolver( Float &peakresidual, Float &modelflux )
   void SDAlgorithmWaveletMSClean::initializeDeconvolver()
   {
-    LogIO os( LogOrigin("SDAlgorithmMSClean","initializeDeconvolver",WHERE) );
+    LogIO os( LogOrigin("SDAlgorithmWaveletMSClean","initializeDeconvolver",WHERE) );
 
     AlwaysAssert( (bool) itsImages, AipsError );
     {
@@ -187,7 +187,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 
   void SDAlgorithmWaveletMSClean::takeOneStep( Float loopgain, Int cycleNiter, Float cycleThreshold, Float &peakresidual, Float &modelflux, Int &iterdone)
   {
-    LogIO os( LogOrigin("SDAlgorithmMSClean","takeOneStep",WHERE) );
+    LogIO os( LogOrigin("SDAlgorithmWaveletMSClean","takeOneStep",WHERE) );
 
     Quantity thresh( cycleThreshold, "Jy" );
     //    Quantity ftthresh( 100.0, "Jy" ); /// Look at MFMSCleanImageSkyModel.cc for more.

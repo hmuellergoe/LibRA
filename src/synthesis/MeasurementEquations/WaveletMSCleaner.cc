@@ -88,7 +88,7 @@ void WaveletMSCleaner::makeScale(Matrix<Float>& iscale, const Float& scaleSize)
 			} else {
 				rad = sqrt(rad2);
 			}
-			iscale(i,j) = wavelet(rad);
+			iscale(i,j) = dogwavelet(rad, scaleSize);
 			volume += iscale(i,j);
 		} else {
 			iscale(i,j) = 0.0;
@@ -102,6 +102,25 @@ void WaveletMSCleaner::makeScale(Matrix<Float>& iscale, const Float& scaleSize)
 // Calculate the spheroidal function
 Float WaveletMSCleaner::wavelet(Float rad) {
   return 0.0;
+}
+
+Float WaveletMSCleaner::dogwavelet(Float rad, Float scaleSize) {
+	
+  if (rad <= 0) {
+    return 1.0;
+  } else if (rad >= 5.0) {
+    return 0.0;
+  }
+  
+    Float sigma_1 = scaleSize;
+    Float sigma_2 = 1.6 * scaleSize; //Research showed that 1.6 was the ideal difference between STD values
+    
+    Float gaussian_1 = (1/(2*sigma_1*sigma_1*3.141)) * (exp(-0.5 * pow(rad/sigma_1 , 2.0)));
+    Float gaussian_2 = (1/(2*sigma_2*sigma_2*3.141)) * (exp(-0.5 * pow(rad/sigma_2 , 2.0)));
+    
+    Float DoG_wavelet = gaussian_1 - gaussian_2;
+  
+    return DoG_wavelet;
 }
 
 } //# NAMESPACE CASA - END

@@ -52,7 +52,8 @@ protected:
   casacore::Float itsWaveletDummyParam;
   
   void makeScale(casacore::Matrix<casacore::Float>& scale, const casacore::Float& scaleSize) override;
-  float wavelet(float rad);
+  casacore::Float wavelet(casacore::Float rad);
+  casacore::Float dogwavelet(casacore::Float rad, casacore::Float scaleSize);
 
 };
 
