@@ -195,6 +195,7 @@ MatrixCleaner & MatrixCleaner::operator=(const MatrixCleaner & other) {
     itsMaximumResidual = other.itsMaximumResidual;
     itsIgnoreCenterBox = other.itsIgnoreCenterBox;
     itsSmallScaleBias = other.itsSmallScaleBias;
+    itsScaleWeights = other.itsScaleWeights;
     itsStopAtLargeScaleNegative = other.itsStopAtLargeScaleNegative;
     itsStopPointMode = other.itsStopPointMode;
     itsDidStopPointMode = other.itsDidStopPointMode;
@@ -345,7 +346,13 @@ Int MatrixCleaner::clean(Matrix<Float>& model,
 
   Int scale;
   Vector<Float> scaleBias(nScalesToClean);
-  if (nScalesToClean > 1) {
+  if (itsScaleWeights.nelements() > 0) {
+    AlwaysAssert(itsScaleWeights.nelements() == static_cast<uInt>(nScalesToClean), AipsError);
+    scaleBias = itsScaleWeights;
+    for (scale=0;scale<nScalesToClean;scale++) {
+	  os << "scale " << scale+1 << " = " << itsScaleSizes(scale) << " pixels with weight = " << scaleBias(scale) << LogIO::POST;
+    }
+  } else if (nScalesToClean > 1) {
     for (scale=0;scale<nScalesToClean;scale++) {
       scaleBias(scale) = 1 - itsSmallScaleBias *
 	itsScaleSizes(scale)/itsScaleSizes(nScalesToClean-1);

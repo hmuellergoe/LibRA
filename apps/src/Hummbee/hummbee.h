@@ -92,13 +92,15 @@ float Hummbee(std::string& imageName, std::string& modelImageName,
         int& cycleniter, float& cyclefactor,
         std::vector<std::string>& mask, std::string& specmode,
         bool& doPBCorr,
-        string& imagingMode);
+        string& imagingMode,
+        const std::vector<float>& waveletweights = {});
 
 
 void UI(bool restart, int argc, char **argv, bool interactive, 
   string& imageName, string& modelImageName,
   string& deconvolver,
   vector<float>& scales,
+  vector<float>& waveletweights,
   float& largestscale, float& fusedthreshold,vector<float>& waveletscales,vector<float>& waveletamps,
   float& autothreshold,int& automaxiter,float& autogain, float& hogbomgain,bool& autohogbom, float& autotrigger,float& autopower,int& autoxmask,int& autoymask,
   float& lbfgsepsf, float& lbfgsepsx, float& lbfgsepsg, int& lbfgsmaxit, float& waveletdummyparam,

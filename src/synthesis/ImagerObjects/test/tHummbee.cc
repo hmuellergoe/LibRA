@@ -62,6 +62,7 @@ void UI(bool restart, int argc, char **argv, string& MSNBuf,
 	Float& pbLimit,
   string& deconvolver,
   vector<float>& scales,
+  vector<float>& waveletweights,
   float& largestscale, float& fusedthreshold,vector<float>& waveletscales,vector<float>& waveletamps,
   float& autothreshold,int& automaxiter,float& autogain, float& hogbomgain,bool& autohogbom,float& autotrigger,float& autopower, int& autoxmask, int& autoymask, 
   float& lbfgsepsf, float& lbfgsepsx, float& lbfgsepsg, int& lbfgsmaxit, float& waveletdummyparam,
@@ -123,7 +124,9 @@ void UI(bool restart, int argc, char **argv, string& MSNBuf,
 
       InitMap(watchPoints,exposedKeys);
       exposedKeys.push_back("scales");
+      exposedKeys.push_back("waveletweights");
       watchPoints["multiscale"]=exposedKeys;
+      watchPoints["waveletmultiscale"]=exposedKeys;
       
       //InitMap(watchPoints,exposedKeys);
       exposedKeys.push_back("largestscale");
@@ -147,10 +150,11 @@ void UI(bool restart, int argc, char **argv, string& MSNBuf,
       watchPoints["asp"]=exposedKeys;
 
       i=1;clgetSValp("deconvolver", deconvolver, i ,watchPoints);
-      clSetOptions("deconvolver",{"hogbom","mtmfs","clark", "multiscale","asp"}); //genie todo: add full list
+      clSetOptions("deconvolver",{"hogbom","mtmfs","clark", "multiscale","waveletmultiscale","asp"}); //genie todo: add full list
 
       int N;
       N=0; N=clgetNFValp("scales", scales, N);
+      N=0; N=clgetNFValp("waveletweights", waveletweights, N);
 
       i=1;clgetFValp("largestscale", largestscale,i);
       i=1;clgetFValp("fusedthreshold", fusedthreshold,i);
@@ -250,6 +254,7 @@ int main(int argc, char **argv)
   bool conjBeams= true;
   float pbLimit=1e-3;
   vector<float> scales;
+  vector<float> waveletweights;
   float largestscale = -1;
   float fusedthreshold = 0;
   vector<float> waveletscales;
@@ -283,6 +288,7 @@ int main(int argc, char **argv)
      ,doPBCorr, conjBeams, pbLimit, 
     deconvolver,
     scales,
+    waveletweights,
     largestscale, fusedthreshold,waveletscales, waveletamps,autothreshold,automaxiter,autogain,hogbomgain,autohogbom,autotrigger,autopower,autoxmask,autoymask,lbfgsepsf,lbfgsepsx,lbfgsepsg,lbfgsmaxit,waveletdummyparam,
     nterms,
     gain, threshold,
@@ -301,6 +307,7 @@ int main(int argc, char **argv)
                  doPBCorr, conjBeams, pbLimit,
                  deconvolver,
                  scales,
+                 waveletweights,
                  largestscale, fusedthreshold,waveletscales,waveletamps,autothreshold,automaxiter,autogain,hogbomgain,autohogbom,autotrigger,autopower,autoxmask,autoymask,lbfgsepsf,lbfgsepsx,lbfgsepsg,lbfgsmaxit,waveletdummyparam,
                  nterms,
                  gain, threshold,

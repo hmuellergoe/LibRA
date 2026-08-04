@@ -66,6 +66,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 
   SDAlgorithmWaveletMSClean::SDAlgorithmWaveletMSClean( Vector<Float> scalesizes,
             Float smallscalebias,
+            Vector<Float> waveletweights,
             // Int stoplargenegatives,
             Int stoppointmode,
             Float waveletdummyparam ):
@@ -74,6 +75,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     itsCleaner(),
     itsScaleSizes(scalesizes),
     itsSmallScaleBias(smallscalebias),
+    itsWaveletWeights(waveletweights),
     //    itsStopLargeNegatives(stoplargenegatives),
     itsStopPointMode(stoppointmode),
     itsWaveletDummyParam(waveletdummyparam)
@@ -150,7 +152,8 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     	}
 
 
-    	itsCleaner.setSmallScaleBias( itsSmallScaleBias );
+	itsCleaner.setSmallScaleBias( itsSmallScaleBias );
+	itsCleaner.setScaleWeights( itsWaveletWeights );
     	//itsCleaner.stopAtLargeScaleNegative( itsStopLargeNegatives );// In MFMSCleanImageSkyModel.cc, this is only for the first two major cycles...
     	itsCleaner.stopPointMode( itsStopPointMode );
     	itsCleaner.ignoreCenterBox( true ); // Clean full image
@@ -240,4 +243,3 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 
 
 } //# NAMESPACE CASA - END
-

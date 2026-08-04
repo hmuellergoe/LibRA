@@ -216,6 +216,10 @@ public:
   // Typical bias values range from 0.2 to 1.0.
   void setSmallScaleBias(const casacore::Float x=0.5) { itsSmallScaleBias = x; }
 
+  // Override the scale weights normally computed from itsSmallScaleBias.
+  // An empty vector preserves the standard scale-bias calculation.
+  void setScaleWeights(const casacore::Vector<casacore::Float>& weights) { itsScaleWeights = weights; }
+
   // During early iterations of a cycled casacore::MS Clean in mosaicing, it common
   // to come across an ocsilatory pattern going between positive and
   // negative in the large scale.  If this is set, we stop at the first
@@ -301,6 +305,7 @@ protected:
   casacore::CountedPtr<casacore::Matrix<casacore::Float> > itsMask;
   casacore::IPosition itsPositionPeakPsf;
   casacore::Float itsSmallScaleBias;
+  casacore::Vector<casacore::Float> itsScaleWeights;
   casacore::Block<casacore::Matrix<casacore::Float> > itsScaleMasks;
   casacore::Block<casacore::Matrix<casacore::Complex> > itsScaleXfrs;
   casacore::Bool itsScalesValid;

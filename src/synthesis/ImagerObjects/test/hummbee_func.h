@@ -271,6 +271,7 @@ void Hummbee(bool restartUI, int argc, char **argv, string& MSNBuf,
         Float& pbLimit,
         string& deconvolver,
         vector<float>& scales,
+        vector<float>& waveletweights,
         float& largestscale, float& fusedthreshold,vector<float>& waveletscales,vector<float>& waveletamps,
         float& autothreshold,int& automaxiter,float& autogain, float& hogbomgain,bool& autohogbom, float& autotrigger, float& autopower, int& autoxmask, int& autoymask, 
         float& lbfgsepsf, float& lbfgsepsx, float& lbfgsepsg, int& lbfgsmaxit, float& waveletdummyparam,
@@ -294,6 +295,7 @@ void Hummbee(bool restartUI, int argc, char **argv, string& MSNBuf,
       decPars_p.deconvolverId=0;
       decPars_p.nTaylorTerms=1; 
       decPars_p.scales = Vector<Float>(scales);
+      decPars_p.waveletWeights = Vector<Float>(waveletweights);
       decPars_p.maskType="user"; //genie
       //decPars_p.maskString=mask[0]; 
       //decPars_p.maskList.resize(1); decPars_p.maskList[0]=mask;

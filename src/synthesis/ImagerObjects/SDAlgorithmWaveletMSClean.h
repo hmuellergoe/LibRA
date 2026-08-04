@@ -54,6 +54,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     // Empty constructor
     SDAlgorithmWaveletMSClean(casacore::Vector<casacore::Float> scalesizes,
 		       casacore::Float smallscalebias=0.6, 
+		       casacore::Vector<casacore::Float> waveletweights=casacore::Vector<casacore::Float>(),
 		       // casacore::Int stoplargenegatives=-2, 
 		       casacore::Int stoppointmode=-1,
 		       casacore::Float waveletdummyparam=0 );
@@ -75,6 +76,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     WaveletMSCleaner itsCleaner;
     casacore::Vector<casacore::Float> itsScaleSizes;
     casacore::Float itsSmallScaleBias;
+    casacore::Vector<casacore::Float> itsWaveletWeights;
     //casacore::Int itsStopLargeNegatives;
     casacore::Int itsStopPointMode;
     casacore::Float itsWaveletDummyParam;

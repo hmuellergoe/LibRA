@@ -237,7 +237,8 @@ float Hummbee(
         int& cycleniter, float& cyclefactor,
         vector<string>& mask, string& specmode,
         bool& doPBCorr,
-        string& imagingMode)
+        string& imagingMode,
+        const vector<float>& waveletweights)
 {
   LogIO os(LogOrigin("Hummbee","hummbee_func"));
 
@@ -255,6 +256,7 @@ float Hummbee(
       decPars_p.deconvolverId=0;
       decPars_p.nTaylorTerms=1; 
       decPars_p.scales = Vector<Float>(scales);
+      decPars_p.waveletWeights = Vector<Float>(waveletweights);
       decPars_p.maskType="user"; //genie
       //decPars_p.maskString=mask[0]; 
       //decPars_p.maskList.resize(1); decPars_p.maskList[0]=mask;

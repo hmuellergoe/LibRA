@@ -143,7 +143,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 	  }
 	else if(decpars.algorithm==String("waveletmultiscale"))
 	  {
-	    itsDeconvolver.reset(new SDAlgorithmWaveletMSClean( decpars.scales, decpars.scalebias, decpars.waveletdummyparam ));
+	    itsDeconvolver.reset(new SDAlgorithmWaveletMSClean( decpars.scales, decpars.scalebias, decpars.waveletWeights, -1, decpars.waveletdummyparam ));
 	  }
 	else if(decpars.algorithm==String("mem"))
 	  {
@@ -1315,4 +1315,3 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     //cerr << "SETT::ItsRobustStats " << Vector<Double>(itsRobustStats.asArrayDouble("min")) << endl;
   }
 } //# NAMESPACE CASA - END
-

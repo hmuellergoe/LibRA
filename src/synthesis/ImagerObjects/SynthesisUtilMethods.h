@@ -435,6 +435,7 @@ public:
   casacore::Int nTaylorTerms; 
   casacore::Vector<casacore::Float> scales;
   casacore::Float scalebias;
+  casacore::Vector<casacore::Float> waveletWeights;
   casacore::String maskString;
   casacore::String maskType;
   casacore::Vector<casacore::String> maskList;

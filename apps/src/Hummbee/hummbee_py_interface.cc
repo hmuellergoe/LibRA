@@ -57,8 +57,8 @@ PYBIND11_MODULE(hummbee2py, m)
     "mask"_a="",
     "specmode"_a="mfs",
     "pbcor"_a=false,
-    "mode"_a="deconvolve"
+    "mode"_a="deconvolve",
+    "waveletweights"_a=std::vector<float>()
     );
    
 }
-

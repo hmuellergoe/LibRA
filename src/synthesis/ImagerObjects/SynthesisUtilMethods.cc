@@ -3881,6 +3881,8 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 
 	err += readVal( inrec, String("scales"), scales );
 	err += readVal( inrec, String("scalebias"), scalebias );
+	if (inrec.isDefined("waveletweights"))
+	  err += readVal( inrec, String("waveletweights"), waveletWeights );
 
         err += readVal( inrec, String("usemask"), maskType );
         if( maskType=="auto-thresh" ) 
@@ -4366,6 +4368,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     nTaylorTerms=1;
     scales.resize(1); scales[0]=0.0;
     scalebias=0.6;
+    waveletWeights.resize(0);
     maskType="none";
     maskString="";
     maskList.resize(1); maskList[0]="";
@@ -4409,6 +4412,7 @@ namespace casa { //# NAMESPACE CASA - BEGIN
     decpar.define("nterms",nTaylorTerms);
     decpar.define("scales",scales);
     decpar.define("scalebias",scalebias);
+    decpar.define("waveletweights",waveletWeights);
     decpar.define("usemask",maskType);
     decpar.define("fusedthreshold", fusedThreshold);
     decpar.define("waveletscales", waveletScales);
@@ -4471,4 +4475,3 @@ namespace casa { //# NAMESPACE CASA - BEGIN
 
 
 } //# NAMESPACE CASA - END
-
