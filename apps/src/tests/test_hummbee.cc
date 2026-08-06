@@ -457,6 +457,7 @@ TEST(HummbeeTest, UIFactory) {
   bool restartUI=false;
 
   vector<float> scales;
+  vector<float> waveletweights;
   float largestscale = -1;
   float fusedthreshold = 0;
   vector<float> waveletscales;
@@ -490,6 +491,7 @@ TEST(HummbeeTest, UIFactory) {
     imageName, modelImageName, 
     deconvolver,
     scales,
+    waveletweights,
     largestscale, fusedthreshold,
     waveletscales, waveletamps,
     autothreshold, automaxiter, autogain, hogbomgain, autohogbom, autotrigger, autopower, autoxmask, autoymask, 
