@@ -220,6 +220,7 @@ protected:
   casacore::Float itsOptimumScaleSize;
   double itsUsedMemoryMB;
   float itsPeakResidual;
+  double itsRescale;
   float itsPrevPeakResidual;
   casacore::CountedPtr<casacore::Matrix<casacore::Float> > itsOrigDirty;
 

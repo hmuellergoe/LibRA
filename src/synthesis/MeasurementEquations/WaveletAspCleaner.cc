@@ -175,6 +175,14 @@ void WaveletAspCleaner::runLBFGS(
     const vector<IPosition> &activeSetCenter,
     FFTServer<Float,Complex> &fft) const
 {
+    // Preserve Wavelet-Asp's existing ALGLIB variable scaling. Standard
+    // Asp-CLEAN uses the CAS-14804 manual rescaling in the base override.
+    real_1d_array s;
+    s.setlength(x.length());
+    for (ae_int_t i = 0; i < x.length(); ++i)
+        s[i] = x[i];
+    minlbfgssetscale(state, s);
+
     ParamAlglibObjWavelet optParam(*itsDirty, activeSetCenter, itsWaveletScales, itsWaveletAmps);
 	ParamAlglibObjWavelet *ptrParam;
     ptrParam = &optParam;

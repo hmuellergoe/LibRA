@@ -25,6 +25,7 @@ private:
   int nX;
   int nY;
   unsigned int AspLen;
+  double itsrescale;
   casacore::Matrix<casacore::Float> itsMatDirty;
   casacore::Matrix<casacore::Complex> itsPsfFT;
   std::vector<casacore::IPosition> center;
@@ -40,11 +41,13 @@ public:
   ParamAlglibObj(const casacore::Matrix<casacore::Float>& dirty,
     const casacore::Matrix<casacore::Complex>& psf,
     const std::vector<casacore::IPosition>& positionOptimum,
-    const casacore::FFTServer<casacore::Float,casacore::Complex>& fftin) :
+    const casacore::FFTServer<casacore::Float,casacore::Complex>& fftin,
+    const double& rescale) :
     itsMatDirty(dirty),
     itsPsfFT(psf),
     center(positionOptimum),
-    fft(fftin)
+    fft(fftin),
+    itsrescale(rescale)
   {
     nX = itsMatDirty.shape()(0);
     nY = itsMatDirty.shape()(1);
@@ -64,6 +67,7 @@ public:
   unsigned int getterAspLen() { return AspLen; }
   int getterNX() { return nX; }
   int getterNY() { return nY; }
+  double getterRescale() { return itsrescale; }
   casacore::Matrix<casacore::Float>  getterRes() { return newResidual; }
   void setterRes(const casacore::Matrix<casacore::Float>& res) { newResidual = res; }
   casacore::Matrix<casacore::Float>  getterAspConvPsf() { return AspConvPsf; }
@@ -85,6 +89,7 @@ inline void objfunc_alglib(const alglib::real_1d_array &x, double &func, alglib:
     const unsigned int AspLen = MyP->getterAspLen();
     const int nX = MyP->getterNX();
     const int nY = MyP->getterNY();
+    const double rescale = MyP->getterRescale();
     casacore::Matrix<casacore::Float> newResidual(MyP->getterRes());
     casacore::Matrix<casacore::Float> AspConvPsf(MyP->getterAspConvPsf());
     casacore::Matrix<casacore::Float> Asp(MyP->getterAsp());
@@ -189,7 +194,7 @@ inline void objfunc_alglib(const alglib::real_1d_array &x, double &func, alglib:
     {
       for(int i = minX; i < maxX; ++i)
       {
-        newResidual(i, j) = itsMatDirty(i, j) - amp * AspConvPsf(i, j);
+        newResidual(i, j) = itsMatDirty(i, j) / rescale - amp * AspConvPsf(i, j);
         func = func + double(pow(newResidual(i, j), 2));
 
         // derivatives of amplitude

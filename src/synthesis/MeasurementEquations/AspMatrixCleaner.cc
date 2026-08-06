@@ -94,6 +94,7 @@ AspMatrixCleaner::AspMatrixCleaner():
   itsOptimumScale(0),
   itsOptimumScaleSize(0.0),
   itsPeakResidual(1000.0), // temp. should this be changed to MAX?
+  itsRescale(1.0),
   itsPrevPeakResidual(0.0),
   itsOrigDirty( ),
   itsFusedThreshold(0.0),
@@ -1570,13 +1571,20 @@ void AspMatrixCleaner::runLBFGS(
     const vector<IPosition> &activeSetCenter,
     FFTServer<Float,Complex> &fft) const
 {
-    ParamAlglibObj optParam(*itsDirty, *itsXfr, activeSetCenter, fft);
+    // CAS-14804 manually conditions the amplitude variable and objective.
+    // This avoids ALGLIB's scale-based preconditioner while retaining a
+    // well-scaled optimization problem.
+    x[0] /= itsRescale;
+    minlbfgsrestartfrom(state, x);
+    ParamAlglibObj optParam(
+        *itsDirty, *itsXfr, activeSetCenter, fft, itsRescale);
     ParamAlglibObj *ptrParam;
     ptrParam = &optParam;
 
     alglib::minlbfgsoptimize(state, objfunc_alglib, NULL, (void *) ptrParam);
 
     minlbfgsresults(state, x, rep);
+    x[0] *= itsRescale;
 }
 
 // ALGLIB - gold - not "log"
@@ -1661,23 +1669,18 @@ vector<Float> AspMatrixCleaner::getActiveSetAspen(const float peakres)
     tempx.push_back(itsInitScaleSizes[optimumScale]);
     activeSetCenter.push_back(positionOptimum);
 
+    itsRescale = abs(strengthOptimum / itsPsfWidth);
+
     // initialize alglib option
 	  unsigned int length = tempx.size();
     real_1d_array x;
 	  x.setlength(length);
-
-    // for G55 ,etc
-    real_1d_array s;
-    s.setlength(length);
 
 	  // initialize starting point
 	  for (unsigned int i = 0; i < length; i+=2)
 	  {
 	      x[i] = tempx[i]; //amp
 	      x[i+1] = tempx[i+1]; //scale
-
-        s[i] = tempx[i]; //amp
-        s[i+1] = tempx[i+1]; //scale
 	  }
 
 
@@ -1692,7 +1695,6 @@ vector<Float> AspMatrixCleaner::getActiveSetAspen(const float peakres)
 	  minlbfgsstate state;
 	  minlbfgscreate(1, x, state);
 	  minlbfgssetcond(state, epsg, epsf, epsx, maxits);
-	  minlbfgssetscale(state, s);
 	  minlbfgsreport rep;
 
 	  /*ParamAlglibObj optParam(*itsDirty, *itsXfr, activeSetCenter, fft);
