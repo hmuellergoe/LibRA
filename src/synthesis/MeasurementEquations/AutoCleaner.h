@@ -122,6 +122,9 @@ public:
   void approximateBasisFunction();
   void updateBasisFunction();
   void subtractBeam(casacore::Matrix<casacore::Float> &map, casacore::Matrix<casacore::Float> &beam, casacore::IPosition blc, casacore::IPosition trc, casacore::IPosition blcbeam, casacore::IPosition trcbeam, casacore::Float factor, casacore::Bool reverse, casacore::Bool add);
+  void linearCombination(casacore::Matrix<casacore::Float>& out,
+      const casacore::Matrix<casacore::Float>& a, casacore::Float alpha,
+      const casacore::Matrix<casacore::Float>& b, casacore::Float beta);
 
 
   //change the psf
@@ -273,6 +276,10 @@ protected:
                              
   casacore::Bool findMaxAbsBox(const casacore::Matrix<casacore::Float>& lattice, const casacore::IPosition& blc, const casacore::IPosition& trc, casacore::Float& maxAbs, casacore::IPosition& posMaxAbs);
   casacore::Bool findMaxAbsMaskBox(const casacore::Matrix<casacore::Float>& lattice, const casacore::Matrix<casacore::Float>& mask, const casacore::IPosition& blc, const casacore::IPosition& trc, casacore::Float& maxAbs, casacore::IPosition& posMaxAbs);
+  casacore::Bool findMinMaxBox(const casacore::Matrix<casacore::Float>& lattice,
+      const casacore::IPosition& blc, const casacore::IPosition& trc,
+      casacore::Float& minVal, casacore::Float& maxVal,
+      casacore::IPosition& posMin, casacore::IPosition& posMax);
 
   // Helper function to reduce the box sizes until the have the same
   // size keeping the centers intact

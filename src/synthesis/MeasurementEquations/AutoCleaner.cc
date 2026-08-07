@@ -359,18 +359,9 @@ Int AutoCleaner::clean(Matrix<Float>& model,
   //Float itsStrengthOptimum=0.0;
   os << "Starting iteration"<< LogIO::POST;
   
-  //
-  Int nx=model.shape()(0);
-  Int ny=model.shape()(1);
-  IPosition gip; 
-  gip = IPosition(2,nx,ny);  
-  casacore::Matrix<casacore::Float> vecWork_p;
-  vecWork_p.resize(gip);
-  casacore::Matrix<casacore::Float> vecWork_pms;
-  vecWork_pms.resize(gip);
   Float tempGain;
   Bool cleanhogbom=false;
-  //
+  Matrix<Float> correlationProductOld;
 
   itsIteration = itsStartingIter;
   for (Int ii=itsStartingIter; ii < itsMaxNiter; ii++) {
@@ -379,34 +370,14 @@ Int AutoCleaner::clean(Matrix<Float>& model,
     // Find the peak residual
     itsStrengthOptimum = 0.0;
 	
-    // Find absolute maximum for the dirty image
-    /*Matrix<Float> work = vecWork_p(blcDirty,trcDirty);   
-    work = 0.0;
-    work = work + itsDirty(blcDirty,trcDirty);
-
-    if (!itsMask.null()) {
-	    findMaxAbsMask(vecWork_p, *itsMask, MaximumHogbom, posMaximumHogbom);
-    } else {
-	    findMaxAbs(vecWork_p, MaximumHogbom, posMaximumHogbom);
-	  }*/
-	  
+	// Find the absolute maximum directly in the active dirty-image box.
 	if (!itsMask.null()) {
 		findMaxAbsMaskBox(itsDirty, *itsMask, blcDirty, trcDirty, MaximumHogbom, posMaximumHogbom);
 	} else {
 		findMaxAbsBox(itsDirty, blcDirty, trcDirty, MaximumHogbom, posMaximumHogbom);
 	}
 
-    // Find absolute maximum for the ms dirty image
-    /*Matrix<Float> workms = vecWork_pms(blcDirty,trcDirty);  
-    workms = 0.0;
-    workms = workms + tildeMI(blcDirty,trcDirty);
-
-    if (!itsMask.null()) {
-	    findMaxAbsMask(vecWork_pms, *itsMask, itsStrengthOptimum, posMaximum);
-    } else {
-	    findMaxAbs(vecWork_pms, itsStrengthOptimum, posMaximum);
-	  }*/
-	  
+	// Find the absolute maximum directly in the active autocorrelation box.
 	if (itsAutoHogbom == false){
 		if (!itsMask.null()) {
 			findMaxAbsMaskBox(tildeMI, *itsMask, blcDirty, trcDirty, itsStrengthOptimum, posMaximum);
@@ -425,10 +396,23 @@ Int AutoCleaner::clean(Matrix<Float>& model,
         //os << "Using Hogbom-CLEAN step"<< LogIO::POST;
     }
     else{
-        tempGain=itsGain/max(tildeMB);
+	const IPosition fullBlc(2, 0, 0);
+	const IPosition fullTrc(tildeMB.shape() - 1);
+	Float minTildeMB;
+	Float maxTildeMB;
+	Float minMTildeMB;
+	Float maxMTildeMB;
+	IPosition minPosition;
+	IPosition maxPosition;
+	findMinMaxBox(tildeMB, fullBlc, fullTrc,
+	              minTildeMB, maxTildeMB, minPosition, maxPosition);
+	findMinMaxBox(MtildeMB, fullBlc, fullTrc,
+	              minMTildeMB, maxMTildeMB, minPosition, maxPosition);
+        tempGain=itsGain/maxTildeMB;
         cleanhogbom=false;
-	if (abs(itsStrengthOptimum)*max(tildeMB)/max(MtildeMB) > abs(itsDirty(posMaximum))){
-		itsStrengthOptimum*=max(tildeMB)/max(MtildeMB);
+	const Float peakRatio = maxTildeMB/maxMTildeMB;
+	if (abs(itsStrengthOptimum)*peakRatio > abs(itsDirty(posMaximum))){
+		itsStrengthOptimum*=peakRatio;
                 }
         else{
                 itsStrengthOptimum=itsDirty(posMaximum);
@@ -505,34 +489,25 @@ Int AutoCleaner::clean(Matrix<Float>& model,
     else{
 	    if(cleanhogbom){
 		    triggerhogbom += itsHogbomGain;
-		    Matrix<Float> BIold(BI.shape());
-		    BIold.assign_conforming(BI);
-			Matrix<Float> tildeII_copy1(tildeII.shape()), tildeII_copy2(tildeII.shape());
-			tildeII_copy1 = 0;
-			tildeII_copy2 = 0;
+		    correlationProductOld.resize(BI.shape());
+		    correlationProductOld.assign_conforming(BI);
 		    #pragma omp parallel default(shared) num_threads(7)
 		    {
 			 #pragma omp master
 			 {
 
 			    #pragma omp task
-			    tildeII += scaleFactor*scaleFactor*BB;
-
-			    //Matrix<Float> tildeIISubc=tildeII(blcconj, trcconj);
-			    ////Matrix<Float> tildeIIscaleSubc=tildeMBI(blcPsfconj,trcPsfconj);
-			    //tildeIISubc -= scaleFactor*tildeMBI(blcPsfconj,trcPsfconj);//tildeIIscaleSubc; 
-			    #pragma omp task
-			    subtractBeam(tildeII_copy1, BIold, blcconj, trcconj, blcPsfconj, trcPsfconj, scaleFactor, false, false);   
-
-			    //Matrix<Float> tildeIISub=tildeII(blc, trc);
-			    ////Matrix<Float> tildeIIscaleSubr = reverseArray(reverseArray(tildeMBI, 0), 1)(blcPsf,trcPsf);
-			    //tildeIISub -= scaleFactor*reverseArray(reverseArray(tildeMBI, 0), 1)(blcPsf,trcPsf);//tildeIIscaleSubr;
-			    #pragma omp task    
-			    subtractBeam(tildeII_copy2, BIold, blc, trc, blcPsf, trcPsf, scaleFactor, true, false);
-
-				#pragma omp taskwait
-				#pragma omp task
-				tildeII += tildeII_copy1+tildeII_copy2;   
+			    {
+			      const IPosition fullBlc(2, 0, 0);
+			      const IPosition fullTrc(tildeII.shape() - 1);
+			      subtractBeam(tildeII, BB, fullBlc, fullTrc,
+			                   fullBlc, fullTrc, scaleFactor*scaleFactor,
+			                   false, true);
+			      subtractBeam(tildeII, correlationProductOld, blcconj, trcconj,
+			                   blcPsfconj, trcPsfconj, scaleFactor, false, false);
+			      subtractBeam(tildeII, correlationProductOld, blc, trc,
+			                   blcPsf, trcPsf, scaleFactor, true, false);
+			    }
 
 			    //Matrix<Float> tildeMBISub=tildeMBI(blc, trc);
 			    ////Matrix<Float> tildeMBIscaleSub=MtildeMBB(blcPsf,trcPsf);
@@ -574,34 +549,25 @@ Int AutoCleaner::clean(Matrix<Float>& model,
 	    }
 	    else{    
         triggerhogbom = 0.0;
-		Matrix<Float> tildeMBIold(tildeMBI.shape());
-		tildeMBIold.assign_conforming(tildeMBI);
-		Matrix<Float> tildeII_copy1(tildeII.shape()), tildeII_copy2(tildeII.shape());
-		tildeII_copy1 = 0;
-		tildeII_copy2 = 0;
+		correlationProductOld.resize(tildeMBI.shape());
+		correlationProductOld.assign_conforming(tildeMBI);
 		#pragma omp parallel default(shared) num_threads(7)
 		    {
 			 #pragma omp master
 			 {
 
 			    #pragma omp task
-			    tildeII += scaleFactor*scaleFactor*MtildeMBB;
-
-			    //Matrix<Float> tildeIISubc=tildeII(blcconj, trcconj);
-			    ////Matrix<Float> tildeIIscaleSubc=tildeMBI(blcPsfconj,trcPsfconj);
-			    //tildeIISubc -= scaleFactor*tildeMBI(blcPsfconj,trcPsfconj);//tildeIIscaleSubc; 
-			    #pragma omp task
-			    subtractBeam(tildeII_copy1, tildeMBIold, blcconj, trcconj, blcPsfconj, trcPsfconj, scaleFactor, false, false);   
-
-			    //Matrix<Float> tildeIISub=tildeII(blc, trc);
-			    ////Matrix<Float> tildeIIscaleSubr = reverseArray(reverseArray(tildeMBI, 0), 1)(blcPsf,trcPsf);
-			    //tildeIISub -= scaleFactor*reverseArray(reverseArray(tildeMBI, 0), 1)(blcPsf,trcPsf);//tildeIIscaleSubr;
-			    #pragma omp task    
-			    subtractBeam(tildeII_copy2, tildeMBIold, blc, trc, blcPsf, trcPsf, scaleFactor, true, false);   
-
-				#pragma omp taskwait
-				#pragma omp task
-				tildeII += tildeII_copy1+tildeII_copy2;
+			    {
+			      const IPosition fullBlc(2, 0, 0);
+			      const IPosition fullTrc(tildeII.shape() - 1);
+			      subtractBeam(tildeII, MtildeMBB, fullBlc, fullTrc,
+			                   fullBlc, fullTrc, scaleFactor*scaleFactor,
+			                   false, true);
+			      subtractBeam(tildeII, correlationProductOld, blcconj, trcconj,
+			                   blcPsfconj, trcPsfconj, scaleFactor, false, false);
+			      subtractBeam(tildeII, correlationProductOld, blc, trc,
+			                   blcPsf, trcPsf, scaleFactor, true, false);
+			    }
 
 			    //Matrix<Float> tildeMBISub=tildeMBI(blc, trc);
 			    ////Matrix<Float> tildeMBIscaleSub=MtildeMBB(blcPsf,trcPsf);
@@ -884,6 +850,38 @@ Bool AutoCleaner::findMaxAbsMaskBox(const Matrix<Float>& lattice,
   return true;
 }
 
+Bool AutoCleaner::findMinMaxBox(const Matrix<Float>& lattice,
+                                const IPosition& blc,
+                                const IPosition& trc,
+                                Float& minVal,
+                                Float& maxVal,
+                                IPosition& posMin,
+                                IPosition& posMax)
+{
+  minVal = lattice(blc(0), blc(1));
+  maxVal = minVal;
+  posMin = IPosition(2, 0);
+  posMax = IPosition(2, 0);
+
+  for (Int y = blc(1); y <= trc(1); ++y) {
+    for (Int x = blc(0); x <= trc(0); ++x) {
+      const Float value = lattice(x, y);
+      if (value < minVal) {
+        minVal = value;
+        posMin(0) = x - blc(0);
+        posMin(1) = y - blc(1);
+      }
+      if (value > maxVal) {
+        maxVal = value;
+        posMax(0) = x - blc(0);
+        posMax(1) = y - blc(1);
+      }
+    }
+  }
+
+  return true;
+}
+
 void AutoCleaner::initializeCorrProducts()
 {
   //BB = correlate(itsPsf, itsPsf);
@@ -1106,8 +1104,7 @@ void AutoCleaner::approximateBasisFunction()
   Int niter=itsAutoMaxiter;
   Int ii=0;
   Matrix<Float> dmap(itsPsf.shape());
-  dmap = 0.0;
-  dmap = dmap+tildeII;
+  dmap.assign_conforming(tildeII);
 
   //Find mask for the autocorrelation by searching for first sidelobe around central peak
   Int ix=0;
@@ -1184,17 +1181,22 @@ void AutoCleaner::approximateBasisFunction()
   xindex=0;
   yindex=0;
 
-  Float threshmaxtildeII = itsAutoThreshold*max(abs(tildeII(blcautomask,trcautomask)));
+  Float peakTildeII;
+  IPosition peakTildeIIPosition;
+  findMaxAbsBox(tildeII, blcautomask, trcautomask,
+                peakTildeII, peakTildeIIPosition);
+  Float threshmaxtildeII = itsAutoThreshold*abs(peakTildeII);
 
   //for (Int ii=0; ii < niter; ii++) {
-  while(max(abs(dmap(blcautomask,trcautomask))) > threshmaxtildeII && ii<niter){
-	//findMaxAbs(dmap, strength, index);
-
+  while(ii<niter){
 	Float minval;
 	Float maxval;
 	IPosition minpos;
 	IPosition maxpos;
-	minMax(minval, maxval, minpos, maxpos, dmap(blcautomask,trcautomask));
+	findMinMaxBox(dmap, blcautomask, trcautomask,
+	              minval, maxval, minpos, maxpos);
+	if (std::max(abs(minval), abs(maxval)) <= threshmaxtildeII)
+		break;
 	if (abs(maxval) > abs(minval) || window_basis(minpos)!=1.0){
 		index = maxpos+blcautomask;
 		strength = maxval;
@@ -1377,7 +1379,16 @@ void AutoCleaner::updateBasisFunction()
 	os << "Update the Autocorrelation model" << LogIO::POST;
 
         Float normalize;
-        normalize = max(abs(tildeII))/max(abs(mod));
+	const IPosition normalizationBlc(2, 0, 0);
+	const IPosition normalizationTrc(tildeII.shape() - 1);
+	Float normalizationPeakTildeII;
+	Float peakMod;
+	IPosition peakPosition;
+	findMaxAbsBox(tildeII, normalizationBlc, normalizationTrc,
+	              normalizationPeakTildeII, peakPosition);
+	findMaxAbsBox(mod, normalizationBlc, normalizationTrc,
+	              peakMod, peakPosition);
+        normalize = abs(normalizationPeakTildeII)/abs(peakMod);
 	Float normalizepow;
 	normalizepow=pow(normalize,itsAutoPower);
 
@@ -1395,8 +1406,7 @@ void AutoCleaner::updateBasisFunction()
 	sumcmap *= normalizepow;
 
 	Matrix<Float> dmap(itsPsf.shape());
-	dmap = 0.0;
-	dmap = dmap+tildeII-mod;
+	linearCombination(dmap, tildeII, 1.0f, mod, -1.0f);
 	Float gain=itsAutoGain;
 
 	Float strength;
@@ -1404,7 +1414,11 @@ void AutoCleaner::updateBasisFunction()
 	Float scaleFactor;
 	Float scaleFactorpow;
 
-        Float threshmaxtildeII = itsAutoThreshold*max(abs(tildeII(blcautomask,trcautomask)));
+	Float peakTildeII;
+	IPosition peakTildeIIPosition;
+	findMaxAbsBox(tildeII, blcautomask, trcautomask,
+	              peakTildeII, peakTildeIIPosition);
+        Float threshmaxtildeII = itsAutoThreshold*abs(peakTildeII);
 	Int niter=itsAutoMaxiter;
 	Int ii=0;
 
@@ -1416,15 +1430,15 @@ void AutoCleaner::updateBasisFunction()
 	xindex=0;
 	yindex=0;
 
-        while(max(abs(dmap(blcautomask,trcautomask))) > threshmaxtildeII && ii<niter){
-
-		//findMaxAbs(dmap, strength, index);
-
+        while(ii<niter){
 		Float minval;
 		Float maxval;
 		IPosition minpos;
 		IPosition maxpos;
-		minMax(minval, maxval, minpos, maxpos, dmap(blcautomask,trcautomask));
+		findMinMaxBox(dmap, blcautomask, trcautomask,
+		              minval, maxval, minpos, maxpos);
+		if (std::max(abs(minval), abs(maxval)) <= threshmaxtildeII)
+			break;
 		if (abs(maxval) > abs(minval) || window_basis(minpos)!=1.0){
 			index = maxpos+blcautomask;
 			strength = maxval;
@@ -1505,6 +1519,8 @@ void AutoCleaner::updateBasisFunction()
 	//for just a few iterations, the fastest version is to track down the change in the correlation products by an analytic description
 	// for more iterations, it makes more sense to just redo the convolution operation
 	if(niter<10){
+		Matrix<Float> tildeMBold(tildeMB.shape());
+		Matrix<Float> tildeMBBold(tildeMBB.shape());
 		for (Int i=0; i < niter; i++) {
 			// Read stored positions and strength
 			index(0)=xindex(i);
@@ -1537,10 +1553,10 @@ void AutoCleaner::updateBasisFunction()
 			makeBoxesSameSize(blcconj,trcconj,blcBBconj,trcBBconj);
 
 			// store old products for parallel computing
-			Matrix<Float> tildeMBold(tildeMB.shape());
 			tildeMBold.assign_conforming(tildeMB);
-			Matrix<Float> tildeMBBold(tildeMBB.shape());
 			tildeMBBold.assign_conforming(tildeMBB);
+			const IPosition fullBlc(2, 0, 0);
+			const IPosition fullTrc(tildeII.shape() - 1);
 
 			#pragma omp parallel default(shared) num_threads(6)
 			{
@@ -1559,9 +1575,13 @@ void AutoCleaner::updateBasisFunction()
 
 				//update channel products, first the beams
 				#pragma omp task
-				MtildeMB += scaleFactorpow*scaleFactorpow*itsPsf;
+				subtractBeam(MtildeMB, itsPsf, fullBlc, fullTrc,
+				             fullBlc, fullTrc,
+				             scaleFactorpow*scaleFactorpow, false, true);
 				#pragma omp task
-				MtildeMBB += scaleFactorpow*scaleFactorpow*BB;
+				subtractBeam(MtildeMBB, BB, fullBlc, fullTrc,
+				             fullBlc, fullTrc,
+				             scaleFactorpow*scaleFactorpow, false, true);
 
 				//wait for task to finish before writing to MtildeMB again
 				#pragma omp taskwait
@@ -1606,9 +1626,13 @@ void AutoCleaner::updateBasisFunction()
 				tildeMBBold.assign_conforming(tildeMBB);}
 			
 				#pragma omp task
-				MtildeMB += scaleFactorpow*scaleFactorpow*itsPsf;
+				subtractBeam(MtildeMB, itsPsf, fullBlc, fullTrc,
+				             fullBlc, fullTrc,
+				             scaleFactorpow*scaleFactorpow, false, true);
 				#pragma omp task
-				MtildeMBB += scaleFactorpow*scaleFactorpow*BB;
+				subtractBeam(MtildeMBB, BB, fullBlc, fullTrc,
+				             fullBlc, fullTrc,
+				             scaleFactorpow*scaleFactorpow, false, true);
 
 				//These two conjugates cannot be added above with the reverse, since we need the update of tildeMB and tildeMBB first
 				#pragma omp taskwait
@@ -1694,6 +1718,24 @@ void AutoCleaner::subtractBeam(Matrix<Float> &map, Matrix<Float> &beam, IPositio
       mapData[mapOffset + x] += sgn * beamData[beamOffset + bx];
     }
   }
+}
+
+void AutoCleaner::linearCombination(Matrix<Float>& out,
+                                    const Matrix<Float>& a,
+                                    Float alpha,
+                                    const Matrix<Float>& b,
+                                    Float beta)
+{
+  AlwaysAssert(a.shape() == b.shape(), AipsError);
+  out.resize(a.shape());
+
+  const Int count = a.nelements();
+  Float* outData = out.data();
+  const Float* aData = a.data();
+  const Float* bData = b.data();
+
+  for (Int index = 0; index < count; ++index)
+    outData[index] = alpha * aData[index] + beta * bData[index];
 }
 
 /*void AutoCleaner::subtractBeam(Matrix<Float> &map, Matrix<Float> &beam, IPosition blc, IPosition trc, IPosition blcbeam, IPosition trcbeam, Float factor, Bool reverse, Bool add)
