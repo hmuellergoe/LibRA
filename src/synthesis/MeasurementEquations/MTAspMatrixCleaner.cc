@@ -633,7 +633,7 @@ vector<Float> MTAspMatrixCleaner::getActiveSetAspen(const float peakres)
     itsXfr->assign(vecPsfFT_p[0]);*/
     if (ntaylor_p > 1)
       itsDirty->assign(vecDirty_p[0]); // update residual
-	  ParamAlglibObj optParam(*itsDirty, *itsXfr, activeSetCenter, fft);
+	  ParamAlglibObj optParam(*itsDirty, *itsXfr, activeSetCenter, fft, 1.0);
     ptrParam = &optParam;
     //}
 

@@ -131,7 +131,7 @@ void SpectralAspCleaner::MFaspclean(Matrix<Float>& model)
 	minlbfgssetprecscale(state);
 	minlbfgsreport rep;
 
-	ParamAlglibObj optParam(*itsDirty, *itsXfr, activeSetCenter, fft);
+	ParamAlglibObj optParam(*itsDirty, *itsXfr, activeSetCenter, fft, 1.0);
 		ParamAlglibObj *ptrParam;
 		ptrParam = &optParam;
 
